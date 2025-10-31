@@ -1,5 +1,6 @@
 <template lang="pug">
   b-form(inline)
+    h4.mr-3 Settings 
     label(for="proxy-settings-input-url") URL 
     input(type="text", id="proxy-settings-input-url", v-model="proxySettings.url").ml-1
     label(for="proxy-settings-input-timeout").ml-2 Timeout 
