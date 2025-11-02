@@ -1,44 +1,50 @@
 package main
 
 import (
-	"sync"
-
-	"github.com/recoilme/pudge"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Settings struct {
 	Url       string `json:"url"`
 	Timeout   int    `json:"timeout"`
-	Threads   int    `json:"threads"`
 	Repeat    int    `json:"repeat"`
 	LastIndex int
 }
 
-var settingsMutex sync.RWMutex
-
-func SettingsDefault(db *pudge.Db) *Settings {
-	stg := &Settings{
-		Url:     "https://example.com",
-		Timeout: 5,
-		Threads: 10,
-		Repeat:  15,
-	}
-	db.Get("settings", stg)
-	return stg
+func (s *Settings) Save(db *gorm.DB) error {
+	// This performs an "upsert".
+	// It will create the settings record if it doesn't exist.
+	// If it does exist (based on the primary key), it will update all columns.
+	// Since there's only one settings row, this is safe and effective.
+	return db.Clauses(clause.OnConflict{
+		DoNothing: true, // Assuming you don't want to update if it exists, just create.
+	}).Create(s).Error
 }
 
-type BenchSettings struct {
-	Timeout  int `json:"timeout"`
-	Interval int `json:"interval"`
-	Reset    int `json:"reset"`
+func (s *Settings) Get(db *gorm.DB) (*Settings, error) {
+	settings := &Settings{}
+	err := db.First(settings).Error
+	return settings, err
 }
 
-func BenchSettingsDefault(db *pudge.Db) *BenchSettings {
-	stg := &BenchSettings{
-		Timeout:  500,
-		Interval: 200,
-		Reset:    24,
+func SettingsDefault(db *gorm.DB) *Settings {
+	s := Settings{}
+	settings, err := s.Get(db)
+	if err == gorm.ErrRecordNotFound {
+		stg := &Settings{
+			Url:     "https://google.com",
+			Timeout: 5,
+			Repeat:  15,
+		}
+		err := stg.Save(db)
+		if err != nil {
+			panic(err)
+		}
+
+	} else if err != nil {
+		panic(err)
 	}
-	db.Get("benchSettings", stg)
-	return stg
+
+	return settings
 }

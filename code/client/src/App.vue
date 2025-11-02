@@ -6,8 +6,9 @@
         b-badge v2.0
       b-navbar-nav
         b-nav-item(to="/") Proxy
-        b-nav-item(to="/benchmark") Benchmark
-        b-nav-item(to="/logs") Logs
+        b-nav-item(to="/ip_logs") IP History
+        b-nav-item(to="/speed_logs") Speed History
+        b-nav-item(to="/visit_logs") Visit History
     router-view
 </template>
 

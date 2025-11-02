@@ -1,146 +1,85 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
-	"github.com/gorilla/websocket"
-	"github.com/recoilme/pudge"
-)
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
-
-var wsMutex sync.Mutex
-
-var (
-	dbProxy       *pudge.Db
-	dbSettings    *pudge.Db
-	dbBench       *BenchData
-	client        = Client{}
-	settings      *Settings
-	benchSettings *BenchSettings
+	"github.com/gin-gonic/gin"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 func main() {
-	var err error
-	dbProxy, err = pudge.Open("./database/proxy.db", nil)
+	// Initialize a single database
+	db, err := gorm.Open(sqlite.Open("database/proxy.db"), &gorm.Config{})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to connect database: %v", err)
 	}
-	defer dbProxy.Close()
 
-	dbSettings, err = pudge.Open("./database/settings.db", nil)
-	if err != nil {
-		log.Fatal(err)
+	// Auto-migrate all models
+	if err := db.AutoMigrate(&Proxy{}, &Settings{}); err != nil {
+		log.Fatalf("failed to migrate database: %v", err)
 	}
-	defer dbSettings.Close()
 
-	dbBench = &BenchData{}
-	err = dbBench.Read()
-	if err != nil {
-		log.Println(err)
+	// Initialize Settings from the single database
+	settings := SettingsDefault(db)
+
+	// Initialize Gin router
+	router := gin.Default()
+
+	// Create handler instance
+	h := handler{
+		db:       db,
+		settings: settings,
 	}
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	// API routes for proxies
+	proxyRoutes := router.Group("api/proxy")
+	{
+		proxyRoutes.GET("", h.ProxyList)
+		proxyRoutes.POST("", h.CreateProxy)
+		proxyRoutes.GET(":id/verify", h.Verify)
+		proxyRoutes.DELETE(":id", h.Delete)
+		proxyRoutes.POST("verify-batch", h.VerifyBatch)
+	}
+
+	// Export routes
+	exportRoutes := router.Group("api/export")
+	{
+		exportRoutes.GET("/all", h.ExportAll)
+		exportRoutes.GET("/selected", h.ExportSelected)
+	}
+
+	// Setup HTTP server
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: router,
+	}
+
+	// Run server in a goroutine
 	go func() {
-		<-sigs
-		log.Println("defered exit")
-		err := dbBench.Write()
-		if err != nil {
-			log.Println(err)
+		log.Println("Server running on http://localhost:8080")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
 		}
-		os.Exit(0)
 	}()
 
-	settings = SettingsDefault(dbSettings)
-	benchSettings = BenchSettingsDefault(dbSettings)
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server...")
 
-	go func() {
-		t := time.Duration(settings.Repeat) * time.Minute
-		var diff time.Duration = t
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server forced to shutdown:", err)
+	}
 
-		for {
-			time.Sleep(diff)
-			now := time.Now()
-
-			keys, err := dbProxy.Keys(nil, 0, 0, true)
-			if err != nil {
-				log.Println(err)
-			}
-			for _, key := range keys {
-				time.Sleep(200 * time.Millisecond)
-				var proxy Proxy
-				err := dbProxy.Get(key, &proxy)
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-				latency, err := Ping(settings, &proxy)
-				if err != nil {
-					log.Println(err)
-				}
-				if latency == 0 {
-					proxy.Failures += 1
-					proxy.LastLatency = 0
-					proxy.LastStatus = 2
-				} else {
-					proxy.LastLatency = latency
-					proxy.LastStatus = 1
-				}
-				proxy.RealIP, proxy.RealCountry = RealIp(settings, &proxy)
-				err = proxy.Update(dbProxy)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				client.Connect.WriteJSON(&Message{
-					Cmd:   "update",
-					Value: proxy,
-				})
-			}
-			d := time.Since(now)
-			if d < t {
-				diff = t - d
-			}
-		}
-
-	}()
-
-	// go func() {
-	// 	http.ListenAndServe(":8081", H{})
-	// }()
-
-	log.Println("Runned on http://localhost:8080")
-	http.ListenAndServe(":8080", handler{})
+	log.Println("Server exiting")
 }
-
-// type H struct{}
-
-// func (h H) ServeHTTP(rw http.ResponseWriter, rq *http.Request) {
-// 	if rq.URL.Path == "/" {
-// 		id := rq.FormValue("id")
-// 		log.Println("id: ", id)
-// 		p := &Proxy{}
-// 		p.Get(dbProxy, id)
-// 		log.Println(*p)
-// 		ip, _ := RealIp(p)
-// 		log.Println("ip: ", ip)
-// 		_, err := rw.Write([]byte(ip))
-// 		if err != nil {
-// 			log.Println(err)
-// 		}
-// 		return
-
-// 	} else if rq.URL.Path == "/test" {
-// 		log.Println("test path")
-// 		log.Println(rq.RemoteAddr)
-// 	}
-// }

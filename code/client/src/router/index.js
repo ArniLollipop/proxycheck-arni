@@ -12,8 +12,8 @@ const routes = [
     component: ProxyView
   },
   {
-    path: '/logs',
-    name: 'logs',
+    path: '/visit_logs',
+    name: 'visit_logs',
     component: LogsView
     
   }
