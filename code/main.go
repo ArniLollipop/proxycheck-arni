@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -34,6 +36,9 @@ func main() {
 
 	// Initialize Gin router
 	router := gin.Default()
+
+	// Serve frontend static files
+	router.Use(static.Serve("/", static.LocalFile("./client/dist", true)))
 
 	// Init Geoip service
 	geoIP, err := NewGeoIPClient("GeoIP2-ISP.mmdb")
@@ -78,6 +83,15 @@ func main() {
 	}
 	router.POST("api/import", h.ImportProxies)
 	router.GET("/api/speedLogs", h.GetSpeedLogs)
+	router.GET("/api/ipLogs", h.GetProxyIPLogs)
+
+	// Handle SPA routing (Vue Router history mode)
+	router.NoRoute(func(c *gin.Context) {
+		// Return index.html for any non-api route
+		if !strings.HasPrefix(c.Request.RequestURI, "/api") {
+			c.File("./client/dist/index.html")
+		}
+	})
 
 	// Setup HTTP server
 	srv := &http.Server{

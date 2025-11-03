@@ -473,3 +473,40 @@ func (h handler) GetSpeedLogs(c *gin.Context) {
 		"total": total,
 	})
 }
+
+func (h handler) GetProxyIPLogs(c *gin.Context) {
+	var filters ProxyIPLogFilters
+
+	// Parse query parameters
+	filters.ProxyId = c.Query("proxy_id")
+	if page, err := strconv.Atoi(c.DefaultQuery("page", "1")); err == nil {
+		filters.Page = page
+	} else {
+		filters.Page = 1
+	}
+	if pageSize, err := strconv.Atoi(c.DefaultQuery("page_size", "15")); err == nil {
+		filters.PageSize = pageSize
+	} else {
+		filters.PageSize = 15
+	}
+	if startDate, err := time.Parse(time.RFC3339, c.Query("start_date")); err == nil {
+		filters.StartDate = startDate
+	}
+	if endDate, err := time.Parse(time.RFC3339, c.Query("end_date")); err == nil {
+		filters.EndDate = endDate
+	}
+	filters.SortField = c.Query("sort_field")
+
+	var p ProxyIPLog
+	logs, count, err := p.List(filters, h.db)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get IP logs"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  logs,
+		"total": count,
+	})
+}

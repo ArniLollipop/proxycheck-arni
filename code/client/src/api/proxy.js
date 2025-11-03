@@ -176,10 +176,36 @@ export async function exportSelectedProxies(ids) {
 
 export async function getSpeedLogs(params) {
   try {
-    const response = await fetch('/api/speedLogs', { params });
+    const url = new URL('/api/speedLogs', window.location.origin);
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key] !== null && params[key] !== undefined) {
+          url.searchParams.append(key, params[key]);
+        }
+      });
+    }
+    const response = await fetch(url);
     return await response.json();
   } catch (error) {
     console.error('Failed to fetch speed logs:', error);
+    throw error;
+  }
+}
+
+export async function getIpLogs(params) {
+  try {
+    const url = new URL('/api/ipLogs', window.location.origin);
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key] !== null && params[key] !== undefined) {
+          url.searchParams.append(key, params[key]);
+        }
+      });
+    }
+    const response = await fetch(url);
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch IP logs:', error);
     throw error;
   }
 }
