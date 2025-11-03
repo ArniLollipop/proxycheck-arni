@@ -38,6 +38,24 @@ export async function createProxy(proxyData) {
 }
 
 /**
+ * Updates an existing proxy.
+ * Corresponds to: PUT /api/proxy/:id
+ * @param {string} id - The ID of the proxy to update.
+ * @param {object} proxyData - The new data for the proxy.
+ * @returns {Promise<object>} A promise that resolves to the updated proxy object.
+ */
+export async function updateProxy(id, proxyData) {
+  const response = await fetch(`/api/proxy/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(proxyData),
+  });
+  return handleResponse(response);
+}
+
+/**
  * Deletes a proxy by its ID.
  * Corresponds to: DELETE /api/proxy/:id
  * @param {string} id - The ID of the proxy to delete.

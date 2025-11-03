@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import { createProxy } from '../api/proxy';
+import { createProxy, updateProxy } from '@/api/proxy.js';
 
 export default {
   name: 'ProxySettingsModal',
@@ -97,15 +97,21 @@ export default {
       };
 
       try {
-        const newProxy = await createProxy(proxyData);
-        // Отправляем событие наверх, чтобы родительский компонент мог обновить список
-        this.$emit('proxy-created', newProxy);
+        let savedProxy;
+        if (this.proxy && this.proxy.id) {
+          // Режим редактирования
+          savedProxy = await updateProxy(this.proxy.id, proxyData);
+          this.$emit('proxy-updated', savedProxy);
+        } else {
+          // Режим создания
+          savedProxy = await createProxy(proxyData);
+          this.$emit('proxy-created', savedProxy);
+        }
         // Закрываем модальное окно после успешного сохранения
         this.$emit('change', false);
       } catch (error) {
-        console.error('Failed to create proxy:', error);
-        // Здесь можно показать пользователю сообщение об ошибке
-        alert('Не удалось создать прокси. Пожалуйста, проверьте консоль для деталей.');
+        console.error('Failed to save proxy:', error);
+        alert('Не удалось сохранить прокси. Пожалуйста, проверьте консоль для деталей.');
       }
     }
   }

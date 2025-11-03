@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/csv"
 	"fmt"
 	"log"
@@ -39,6 +40,22 @@ type ProxyRequest struct {
 	Name     string `json:"name"`
 }
 
+// createAndCheckProxy - вспомогательная функция для создания и проверки прокси
+func (h handler) createAndCheckProxy(p *Proxy) error {
+	latency, err := Ping(h.settings, p)
+	if err != nil {
+		log.Println(err)
+		p.LastStatus = 2 // 2 - failed
+		p.Failures = 1
+	} else {
+		p.LastStatus = 1 // 1 - success
+	}
+	p.LastLatency = latency
+	p.RealIP, p.RealCountry = RealIp(h.settings, p)
+
+	return p.Save(h.db)
+}
+
 func (h handler) CreateProxy(c *gin.Context) {
 	var req ProxyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -57,18 +74,7 @@ func (h handler) CreateProxy(c *gin.Context) {
 		Phone:    req.Phone,
 		Name:     req.Name,
 	}
-	latency, err := Ping(h.settings, &p)
-	if err != nil {
-		log.Println(err)
-		p.LastStatus = 2
-		p.Failures = 1
-	} else {
-		p.LastStatus = 1
-	}
-	p.LastLatency = latency
-	p.RealIP, p.RealCountry = RealIp(h.settings, &p)
-
-	err = p.Save(h.db)
+	err := h.createAndCheckProxy(&p)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -76,6 +82,42 @@ func (h handler) CreateProxy(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"data": p})
 
+}
+
+func (h handler) UpdateProxy(c *gin.Context) {
+	id := c.Param("id")
+	var req ProxyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var p Proxy
+	if err := h.db.First(&p, "id = ?", id).Error; err != nil {
+		log.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Proxy not found"})
+		return
+	}
+
+	// Обновляем поля
+	p.Ip = req.Ip
+	p.Port = req.Port
+	p.Username = req.Username
+	p.Password = req.Password
+	p.Contacts = req.Contacts
+	p.Phone = req.Phone
+	p.Name = req.Name
+
+	// Перепроверяем прокси после обновления данных
+	err := h.createAndCheckProxy(&p)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": p})
 }
 
 func (h handler) Verify(c *gin.Context) {
@@ -128,6 +170,69 @@ func (h handler) VerifyBatch(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"data": "Proxies verified"})
+}
+
+func (h handler) ImportProxies(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File is required"})
+		return
+	}
+
+	openedFile, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
+		return
+	}
+	defer openedFile.Close()
+
+	scanner := bufio.NewScanner(openedFile)
+	importedCount := 0
+	failedLines := 0
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		parts := strings.Split(line, ":")
+		if len(parts) < 4 {
+			failedLines++
+			continue
+		}
+
+		p := Proxy{
+			Id:       uuid.NewString(),
+			Ip:       parts[0],
+			Port:     parts[1],
+			Username: parts[2],
+			Password: parts[3],
+		}
+
+		if len(parts) > 4 {
+			p.Name = parts[4]
+		}
+
+		if err := h.createAndCheckProxy(&p); err != nil {
+			log.Printf("Failed to import proxy %s:%s - %v", p.Ip, p.Port, err)
+			failedLines++
+		} else {
+			importedCount++
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Println("Error reading file for import:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading file"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       fmt.Sprintf("Import finished. Imported: %d, Failed: %d", importedCount, failedLines),
+		"importedCount": importedCount,
+		"failedCount":   failedLines,
+	})
 }
 
 func (h handler) Delete(c *gin.Context) {

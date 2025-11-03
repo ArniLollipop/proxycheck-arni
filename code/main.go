@@ -42,6 +42,7 @@ func main() {
 	proxyRoutes := router.Group("api/proxy")
 	{
 		proxyRoutes.GET("", h.ProxyList)
+		proxyRoutes.PUT(":id", h.UpdateProxy)
 		proxyRoutes.POST("", h.CreateProxy)
 		proxyRoutes.GET(":id/verify", h.Verify)
 		proxyRoutes.DELETE(":id", h.Delete)
@@ -54,6 +55,7 @@ func main() {
 		exportRoutes.GET("/all", h.ExportAll)
 		exportRoutes.GET("/selected", h.ExportSelected)
 	}
+	router.POST("/import", h.ImportProxies)
 
 	// Setup HTTP server
 	srv := &http.Server{

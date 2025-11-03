@@ -39,8 +39,7 @@
   )
     template(#cell(actions)="data")
       b-button(size="sm", variant="primary", @click="() => onVerify(data.item)") Verify
-      b-button(size="sm", variant="warning", @click="() => onChange(data.item)") Change
-      b-button(size="sm", variant="info", @click="() => onReset(data.item)") Details
+      b-button(size="sm", variant="warning", @click="() => onChange(data.item)") Details/Change
       b-button(size="sm", variant="danger", @click="() => onDelete(data.item)") Delete
     template(#cell(selected)='{ rowSelected }')
       template(v-if='rowSelected')
@@ -53,12 +52,13 @@
     small {{ filteredData.length }} results
     b-pagination(v-model="currentPage", :total-rows="filteredData.length", :per-page="perPage", size="sm")
 
-  ProxySettingsModal(v-model="newModalShown", title="New Proxy", @proxy-created="handleProxyCreated")
+  ProxySettingsModal(v-model="newModalShown", title="New Proxy", @proxy-created="handleProxyCreated", @hidden="onModalHidden")
+  ProxySettingsModal(v-model="editModalShown", title="Edit Proxy", :proxy="proxyToEdit", @proxy-updated="handleProxyUpdated", @hidden="onModalHidden")
 </template>
 
 <script>
 import ProxySettingsModal from '@/components/ProxySettingsModal.vue';
-import { getProxies } from '@/api/proxy.js';
+import { getProxies,verifyProxy, verifyBatch, deleteProxy } from '@/api/proxy.js';
 
 export default {
   name: 'ProxyList',
@@ -71,6 +71,9 @@ export default {
       proxies: [], // Для хранения оригинальных данных с API
       selectedRows: [],
       newModalShown: false,
+      editModalShown: false,
+      proxyToEdit: null,
+      pendingProxy: null, // Временно храним прокси для обновления списка
       filters: { port: null, operator: null },
       currentPage: 1,
       perPage: 15, // Можно настроить
@@ -79,7 +82,7 @@ export default {
         { key: 'name', label: 'Name', sortable: true },
         { key: 'ip', label: 'IP', sortable: true },
         { key: 'port', label: 'Port', sortable: true },
-        { key: 'contacts', label: 'Contacts', sortable: true },
+        { key: 'phone', label: 'Phone', sortable: true },
         { key: 'realIP', label: 'Real IP', sortable: true },
         { key: 'username', label: 'Username' },
         { key: 'password', label: 'Password' },
@@ -121,21 +124,102 @@ export default {
   },
   methods: {
     handleProxyCreated(newProxy) {
-      // Добавляем новый прокси в начало списка для наглядности
-      this.proxies.unshift(newProxy);
+      // Временно сохраняем новый прокси, не обновляя основной список
+      this.pendingProxy = newProxy;
+    },
+    handleProxyUpdated(updatedProxy) {
+      // Временно сохраняем обновленный прокси
+      this.pendingProxy = updatedProxy;
     },
     onNew() { this.newModalShown = true } ,
     onImport() { alert('Import clicked') },
     onExport() { alert('Export clicked') },
     onExportSelected() { alert('Export selected clicked') },
-    onVerifySelected() { alert('Verify selected clicked') },
-    onDeleteSelected() { alert('Delete selected clicked') },
-    onVerify(item) { alert('Verify: ' + item.ipPort) },
-    onChange(item) { alert('Change: ' + item.ipPort) },
+    async onVerifySelected() {
+      const ids = this.selectedRows.map(item => item.id);
+      if (ids.length === 0) {
+        alert('No proxies selected');
+        return;
+      }
+      try {
+        await verifyBatch(ids);
+        alert('Proxies verified successfully');
+        this.proxies = await getProxies();
+        this.$refs.selectableTable.clearSelected();
+      } catch (error) {
+        console.error('Failed to verify selected proxies:', error);
+        alert('Failed to verify selected proxies.');
+      }
+    },
+    async onDeleteSelected() {
+      const ids = this.selectedRows.map(item => item.id);
+      if (ids.length === 0) {
+        alert('No proxies selected');
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to delete ${ids.length} selected proxies?`)) {
+        return;
+      }
+
+      try {
+        for (const id of ids) {
+          await deleteProxy(id);
+        }
+      } catch (error) {
+        console.error('An error occurred during batch deletion:', error);
+        alert('An error occurred while deleting proxies. The operation was interrupted.');
+      } finally {
+        this.proxies = await getProxies();
+        this.$refs.selectableTable.clearSelected();
+      }
+    },
+    async onVerify(item) {
+      try {
+        await verifyProxy(item.id);
+        this.proxies = await getProxies();
+      } catch (error) {
+        console.error(`Failed to verify proxy ${item.id}:`, error);
+        alert(`Failed to verify proxy ${item.ip}:${item.port}.`);
+      }
+    },
+    onChange(item) {
+      this.proxyToEdit = item;
+      this.editModalShown = true;
+    },
     onReset(item) { alert('Reset: ' + item.ipPort) },
-    onDelete(item) { alert('Delete: ' + item.ipPort) },
+    async onDelete(item) {
+      if (!confirm(`Are you sure you want to delete proxy ${item.ip}:${item.port}?`)) {
+        return;
+      }
+      try {
+        await deleteProxy(item.id);
+        this.proxies = await getProxies();
+      } catch (error) {
+        console.error(`Failed to delete proxy ${item.id}:`, error);
+        alert(`Failed to delete proxy ${item.ip}:${item.port}.`);
+      }
+    },
     onRowSelected(items) {
       this.selectedRows = items;
+    },
+    onModalHidden() {
+      this.$nextTick(() => {
+        if (this.pendingProxy) {
+          const index = this.proxies.findIndex(p => p.id === this.pendingProxy.id);
+          if (index !== -1) {
+            // Редактирование
+            this.$set(this.proxies, index, this.pendingProxy);
+          } else {
+            // Создание
+            this.proxies.unshift(this.pendingProxy);
+          }
+        }
+        
+        // Сбрасываем все временные состояния
+        this.proxyToEdit = null;
+        this.pendingProxy = null;
+      });
     }
   },
    async created() {
