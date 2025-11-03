@@ -54,11 +54,15 @@
 
   ProxySettingsModal(v-model="newModalShown", title="New Proxy", @proxy-created="handleProxyCreated", @hidden="onModalHidden")
   ProxySettingsModal(v-model="editModalShown", title="Edit Proxy", :proxy="proxyToEdit", @proxy-updated="handleProxyUpdated", @hidden="onModalHidden")
+  
+  //- Скрытый инпут для выбора файла
+  input(type="file", ref="fileInput", @change="handleFileSelected", style="display: none",)
+
 </template>
 
 <script>
 import ProxySettingsModal from '@/components/ProxySettingsModal.vue';
-import { getProxies,verifyProxy, verifyBatch, deleteProxy } from '@/api/proxy.js';
+import { getProxies,verifyProxy, verifyBatch, deleteProxy, importProxies, exportAllProxies, exportSelectedProxies } from '@/api/proxy.js';
 
 export default {
   name: 'ProxyList',
@@ -89,6 +93,7 @@ export default {
         { key: 'operator', label: 'Operator', sortable: true },
         { key: 'lastStatus', label: 'Status', sortable: true },
         { key: 'lastLatency', label: 'Latency (ms)', sortable: true },
+        { key: 'speed', label: 'Speed (kb/s)', sortable: true },
         { key: 'failures', label: 'Failures', sortable: true },
         { key: 'actions', label: 'Actions' }
       ],
@@ -132,9 +137,49 @@ export default {
       this.pendingProxy = updatedProxy;
     },
     onNew() { this.newModalShown = true } ,
-    onImport() { alert('Import clicked') },
-    onExport() { alert('Export clicked') },
-    onExportSelected() { alert('Export selected clicked') },
+    onImport() {
+      // Открываем диалог выбора файла
+      this.$refs.fileInput.click();
+    },
+    async handleFileSelected(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        return;
+      }
+
+      try {
+        const result = await importProxies(file);
+        alert(`Import finished. Imported: ${result.importedCount}, Failed: ${result.failedCount}`);
+        this.proxies = await getProxies(); // Обновляем список
+      } catch (error) {
+        console.error('Failed to import proxies:', error);
+        alert('Failed to import proxies.');
+      } finally {
+        // Сбрасываем значение инпута, чтобы можно было выбрать тот же файл снова
+        event.target.value = '';
+      }
+    },
+    async onExport() {
+      try {
+        await exportAllProxies();
+      } catch (error) {
+        console.error('Failed to export all proxies:', error);
+        alert('Failed to export proxies.');
+      }
+    },
+    async onExportSelected() {
+      const ids = this.selectedRows.map(item => item.id);
+      if (ids.length === 0) {
+        alert('No proxies selected for export.');
+        return;
+      }
+      try {
+        await exportSelectedProxies(ids);
+      } catch (error) {
+        console.error('Failed to export selected proxies:', error);
+        alert('Failed to export selected proxies.');
+      }
+    },
     async onVerifySelected() {
       const ids = this.selectedRows.map(item => item.id);
       if (ids.length === 0) {

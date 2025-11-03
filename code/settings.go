@@ -2,29 +2,26 @@ package main
 
 import (
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type Settings struct {
-	Url       string `json:"url"`
-	Timeout   int    `json:"timeout"`
-	Repeat    int    `json:"repeat"`
-	LastIndex int
+	ID                 uint   `gorm:"primaryKey" json:"-"` // Добавляем ID как первичный ключ
+	Url                string `json:"url"`
+	Timeout            int    `json:"timeout"`
+	Repeat             int    `json:"repeat"`
+	CheckIPInterval    int    `json:"checkIPInterval"`
+	SpeedCheckInterval int    `json:"speedCheckInterval"`
 }
 
 func (s *Settings) Save(db *gorm.DB) error {
-	// This performs an "upsert".
-	// It will create the settings record if it doesn't exist.
-	// If it does exist (based on the primary key), it will update all columns.
-	// Since there's only one settings row, this is safe and effective.
-	return db.Clauses(clause.OnConflict{
-		DoNothing: true, // Assuming you don't want to update if it exists, just create.
-	}).Create(s).Error
+	s.ID = 1 // Устанавливаем ID в 1, чтобы всегда обновлять одну и ту же запись
+	return db.Save(s).Error
 }
 
 func (s *Settings) Get(db *gorm.DB) (*Settings, error) {
 	settings := &Settings{}
-	err := db.First(settings).Error
+	// Ищем запись с ID=1
+	err := db.First(settings, 1).Error
 	return settings, err
 }
 
@@ -33,9 +30,12 @@ func SettingsDefault(db *gorm.DB) *Settings {
 	settings, err := s.Get(db)
 	if err == gorm.ErrRecordNotFound {
 		stg := &Settings{
-			Url:     "https://google.com",
-			Timeout: 5,
-			Repeat:  15,
+			ID:                 1,
+			Url:                "https://google.com",
+			Timeout:            5,
+			Repeat:             15,
+			CheckIPInterval:    15,
+			SpeedCheckInterval: 1440,
 		}
 		err := stg.Save(db)
 		if err != nil {

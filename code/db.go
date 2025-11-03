@@ -23,6 +23,7 @@ type Proxy struct {
 	LastIPChange time.Time `json:"last_ip_change"`
 	Operator     string    `json:"operator"`
 	Phone        string    `json:"phone"`
+	Speed        int       `json:"speed"`
 	Name         string    `json:"name"`
 }
 
@@ -354,11 +355,15 @@ func (p *ProxySpeedLog) List(filters ProxySpeedLogFilters, db *gorm.DB) ([]Proxy
 }
 
 type ProxyIPLog struct {
-	Id        string    `json:"id"`
-	ProxyId   string    `json:"proxy_id"`
-	Timestamp time.Time `json:"timestamp"`
-	Ip        string    `json:"ip"`
-	OldIp     string    `json:"old_ip"`
+	Id         string    `json:"id"`
+	ProxyId    string    `json:"proxy_id"`
+	Timestamp  time.Time `json:"timestamp"`
+	Ip         string    `json:"ip"`
+	OldIp      string    `json:"old_ip"`
+	Country    string    `json:"country"`
+	OldCountry string    `json:"old_country"`
+	ISP        string    `json:"isp"`
+	OldISP     string    `json:"old_isp"`
 }
 
 func (i *ProxyIPLog) Save(db *gorm.DB) error {

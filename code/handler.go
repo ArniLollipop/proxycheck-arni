@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -15,8 +16,9 @@ import (
 )
 
 type handler struct {
-	db       *gorm.DB
-	settings *Settings
+	db          *gorm.DB
+	settings    *Settings
+	geoIPClient *GeoIPClient
 }
 
 func (h handler) ProxyList(c *gin.Context) {
@@ -50,8 +52,15 @@ func (h handler) createAndCheckProxy(p *Proxy) error {
 	} else {
 		p.LastStatus = 1 // 1 - success
 	}
+	speed, err := CheckSpeed(h.settings, p, h.db)
+	if err != nil {
+		log.Println(err)
+		p.LastStatus = 2 // 2 - failed
+		p.Failures = 1
+	}
+	p.Speed = int(speed)
 	p.LastLatency = latency
-	p.RealIP, p.RealCountry = RealIp(h.settings, p)
+	p.RealIP, p.RealCountry, p.Operator = RealIp(h.settings, p, h.db, h.geoIPClient)
 
 	return p.Save(h.db)
 }
@@ -132,11 +141,20 @@ func (h handler) Verify(c *gin.Context) {
 	latency, err := Ping(h.settings, &p)
 	if err != nil {
 		log.Println(err)
+		p.LastStatus = 2
+		p.Failures += 1
 	}
+	speed, err := CheckSpeed(h.settings, &p, h.db)
+	if err != nil {
+		log.Println(err)
+		p.LastStatus = 2
+		p.Failures += 1
+	} else {
+		p.LastStatus = 1
+	}
+	p.Speed = int(speed)
 	p.LastLatency = latency
-	p.LastStatus = 1
-	p.RealIP, p.RealCountry = RealIp(h.settings, &p)
-
+	p.RealIP, p.RealCountry, p.Operator = RealIp(h.settings, &p, h.db, h.geoIPClient)
 	err = p.Save(h.db)
 	if err != nil {
 		log.Println(err)
@@ -159,10 +177,14 @@ func (h handler) VerifyBatch(c *gin.Context) {
 		latency, err := Ping(h.settings, &p)
 		if err != nil {
 			log.Println(err)
+			p.Failures += 1
+			p.LastStatus = 2
+		} else {
+			p.LastLatency = latency
+			p.LastStatus = 1
 		}
-		p.LastLatency = latency
-		p.LastStatus = 1
-		p.RealIP, p.RealCountry = RealIp(h.settings, &p)
+
+		p.RealIP, p.RealCountry, p.Operator = RealIp(h.settings, &p, h.db, h.geoIPClient)
 		err = p.Save(h.db)
 		if err != nil {
 			log.Println(err)
@@ -346,4 +368,100 @@ func (h handler) ExportSelected(c *gin.Context) {
 			continue
 		}
 	}
+}
+
+func (h handler) GetSettings(c *gin.Context) {
+	var s Settings
+	settings, err := s.Get(h.db)
+	if err != nil {
+		log.Println("Error getting settings:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve settings"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": settings})
+}
+
+func (h handler) UpdateSettings(c *gin.Context) {
+	var req Settings
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Println("Invalid settings format:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Сохраняем в базу данных
+	if err := req.Save(h.db); err != nil {
+		log.Println("Error saving settings:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save settings"})
+		return
+	}
+
+	// Обновляем настройки в текущем экземпляре обработчика
+	*h.settings = req
+
+	c.JSON(http.StatusOK, gin.H{"data": h.settings})
+}
+
+func (h handler) GetSpeedLogs(c *gin.Context) {
+	var filters ProxySpeedLogFilters
+
+	// Parse query parameters
+	filters.ProxyId = c.Query("proxy_id")
+	filters.SortField = c.Query("sort_field")
+
+	if pageStr := c.Query("page"); pageStr != "" {
+		page, err := strconv.Atoi(pageStr)
+		if err == nil && page > 0 {
+			filters.Page = page
+		} else {
+			filters.Page = 1
+		}
+	} else {
+		filters.Page = 1
+	}
+
+	if pageSizeStr := c.Query("page_size"); pageSizeStr != "" {
+		pageSize, err := strconv.Atoi(pageSizeStr)
+		if err == nil && pageSize > 0 {
+			filters.PageSize = pageSize
+		} else {
+			filters.PageSize = 20 // Default page size
+		}
+	} else {
+		filters.PageSize = 20
+	}
+
+	const layout = "2006-01-02"
+	if startDateStr := c.Query("start_date"); startDateStr != "" {
+		t, err := time.Parse(layout, startDateStr)
+		if err == nil {
+			filters.StartDate = t
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start_date format. Use YYYY-MM-DD."})
+			return
+		}
+	}
+
+	if endDateStr := c.Query("end_date"); endDateStr != "" {
+		t, err := time.Parse(layout, endDateStr)
+		if err == nil {
+			filters.EndDate = t
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end_date format. Use YYYY-MM-DD."})
+			return
+		}
+	}
+
+	var psl ProxySpeedLog
+	logs, total, err := psl.List(filters, h.db)
+	if err != nil {
+		log.Println("Error fetching speed logs:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve speed logs"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  logs,
+		"total": total,
+	})
 }

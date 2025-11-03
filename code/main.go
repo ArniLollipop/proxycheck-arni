@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -20,6 +21,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
 	}
+	var wg sync.WaitGroup
+	quit := make(chan struct{})
 
 	// Auto-migrate all models
 	if err := db.AutoMigrate(&Proxy{}, &Settings{}); err != nil {
@@ -32,10 +35,21 @@ func main() {
 	// Initialize Gin router
 	router := gin.Default()
 
+	// Init Geoip service
+	geoIP, err := NewGeoIPClient("GeoIP2-ISP.mmdb")
+	if err != nil {
+		log.Fatalf("failed to initialize GeoIP service: %v", err)
+	}
+
+	// Запускаем планировщик проверки IP в отдельной горутине.
+	go StartIPCheckScheduler(&wg, quit, db, settings, geoIP)
+	go StartHealthCheckScheduler(&wg, quit, db, settings)
+
 	// Create handler instance
 	h := handler{
-		db:       db,
-		settings: settings,
+		db:          db,
+		settings:    settings,
+		geoIPClient: geoIP,
 	}
 
 	// API routes for proxies
@@ -49,13 +63,21 @@ func main() {
 		proxyRoutes.POST("verify-batch", h.VerifyBatch)
 	}
 
+	// API routes for settings
+	settingsRoutes := router.Group("api/settings")
+	{
+		settingsRoutes.GET("", h.GetSettings)
+		settingsRoutes.PUT("", h.UpdateSettings)
+	}
+
 	// Export routes
 	exportRoutes := router.Group("api/export")
 	{
-		exportRoutes.GET("/all", h.ExportAll)
-		exportRoutes.GET("/selected", h.ExportSelected)
+		exportRoutes.GET("all", h.ExportAll)
+		exportRoutes.GET("selected", h.ExportSelected)
 	}
-	router.POST("/import", h.ImportProxies)
+	router.POST("api/import", h.ImportProxies)
+	router.GET("/api/speedLogs", h.GetSpeedLogs)
 
 	// Setup HTTP server
 	srv := &http.Server{
@@ -72,9 +94,9 @@ func main() {
 	}()
 
 	// Graceful shutdown
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	<-stop // Ожидаем сигнала завершения.
 	log.Println("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -82,6 +104,8 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server forced to shutdown:", err)
 	}
+	close(quit)
+	wg.Wait() // Ожидаем завершения всех горутин.
 
 	log.Println("Server exiting")
 }

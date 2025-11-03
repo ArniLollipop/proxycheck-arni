@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"log"
 	"net"
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type IP struct {
@@ -12,27 +16,44 @@ type IP struct {
 	Cc      string `json:"cc"`
 }
 
-func RealIp(stg *Settings, proxy *Proxy) (string, string) {
+func RealIp(stg *Settings, proxy *Proxy, db *gorm.DB, geoIPClient *GeoIPClient) (string, string, string) {
 	client, err := newProxyClient(proxy, stg)
 	if err != nil {
 		log.Println("Error creating proxy client:", err)
-		return "", ""
+		return "", "", ""
 	}
 
 	rsp, err := client.Get("https://api.myip.com")
 	if err != nil {
 		log.Println(err)
-		return "", ""
+		return "", "", ""
 	}
 	defer rsp.Body.Close()
 
 	ip := &IP{}
 
+	orerator, err := geoIPClient.ReadData(ip.Ip)
+	if err != nil {
+		log.Println("Error reading geoIP data:", err)
+	}
+
 	json.NewDecoder(rsp.Body).Decode(ip)
+	hist := ProxyIPLog{
+		Id:         uuid.NewString(),
+		ProxyId:    proxy.Id,
+		Timestamp:  time.Now(),
+		Ip:         ip.Ip,
+		OldIp:      proxy.Ip,
+		Country:    ip.Country,
+		OldCountry: proxy.RealCountry,
+		ISP:        orerator.ISP,
+		OldISP:     proxy.Operator,
+	}
+	if err := hist.Save(db); err != nil {
+		log.Println("Error saving IP log:", err)
+	}
 
-	log.Println(*ip)
-
-	return ip.Ip, ip.Country
+	return ip.Ip, ip.Country, orerator.ISP
 }
 
 func GetOutboundIP() string {
