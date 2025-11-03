@@ -25,7 +25,7 @@ func main() {
 	quit := make(chan struct{})
 
 	// Auto-migrate all models
-	if err := db.AutoMigrate(&Proxy{}, &Settings{}); err != nil {
+	if err := db.AutoMigrate(&Proxy{}, &Settings{}, &ProxySpeedLog{}, &ProxyIPLog{}); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
 

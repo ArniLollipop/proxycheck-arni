@@ -31,13 +31,13 @@ func RealIp(stg *Settings, proxy *Proxy, db *gorm.DB, geoIPClient *GeoIPClient) 
 	defer rsp.Body.Close()
 
 	ip := &IP{}
+	json.NewDecoder(rsp.Body).Decode(ip)
 
 	orerator, err := geoIPClient.ReadData(ip.Ip)
 	if err != nil {
 		log.Println("Error reading geoIP data:", err)
 	}
 
-	json.NewDecoder(rsp.Body).Decode(ip)
 	hist := ProxyIPLog{
 		Id:         uuid.NewString(),
 		ProxyId:    proxy.Id,

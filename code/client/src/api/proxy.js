@@ -176,8 +176,8 @@ export async function exportSelectedProxies(ids) {
 
 export async function getSpeedLogs(params) {
   try {
-    const response = await fetch('/api/speed_logs', { params });
-    return handleResponse(response);
+    const response = await fetch('/api/speedLogs', { params });
+    return await response.json();
   } catch (error) {
     console.error('Failed to fetch speed logs:', error);
     throw error;

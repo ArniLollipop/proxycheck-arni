@@ -184,6 +184,14 @@ func (h handler) VerifyBatch(c *gin.Context) {
 			p.LastStatus = 1
 		}
 
+		speed, err := CheckSpeed(h.settings, &p, h.db)
+		if err != nil {
+			log.Println(err)
+			p.Failures += 1
+			p.LastStatus = 2
+		}
+		p.Speed = int(speed)
+
 		p.RealIP, p.RealCountry, p.Operator = RealIp(h.settings, &p, h.db, h.geoIPClient)
 		err = p.Save(h.db)
 		if err != nil {
