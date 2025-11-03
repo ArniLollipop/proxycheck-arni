@@ -21,6 +21,9 @@ RUN npm run build
 # --- Этап 2: Сборка бэкенда ---
 FROM golang:1.24-alpine AS backend-builder
 
+# Устанавливаем C-компилятор, необходимый для CGO и SQLite
+RUN apk add --no-cache build-base
+
 WORKDIR /app
 
 # Копируем файлы зависимостей Go и загружаем их
@@ -39,8 +42,8 @@ COPY code/GeoIP2-ISP.mmdb ./
 # Копируем базу данных SQLite
 COPY code/database ./database
 
-# Собираем Go-приложение
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-w -s' -o /app/main .
+# Собираем Go-приложение с включенным CGO
+RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-w -s' -o /app/main .
 
 
 # --- Этап 3: Финальный образ ---
