@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -352,6 +353,26 @@ func (p *ProxySpeedLog) List(filters ProxySpeedLogFilters, db *gorm.DB) ([]Proxy
 	var count int64
 	err = db.Model(p).Scopes(p.buildConditionsCount(filters)...).Count(&count).Error
 	return logs, count, err
+}
+
+func (p *Proxy) Parse(proxy string) {
+	parts := strings.Split(proxy, ":")
+	p.Ip = parts[0]
+	p.Port = parts[1]
+	p.Username = parts[2]
+	p.Password = parts[3]
+
+	if len(parts) == 5 {
+		isIP := strings.Split(parts[4], ".")
+		if len(isIP) == 4 {
+			p.RealIP = parts[5]
+		} else {
+			p.Tag = parts[4]
+		}
+	}
+	if len(parts) == 6 {
+		p.RealIP = parts[5]
+	}
 }
 
 type ProxyIPLog struct {

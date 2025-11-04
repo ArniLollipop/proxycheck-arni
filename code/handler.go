@@ -226,23 +226,8 @@ func (h handler) ImportProxies(c *gin.Context) {
 			continue
 		}
 
-		parts := strings.Split(line, ":")
-		if len(parts) < 4 {
-			failedLines++
-			continue
-		}
-
-		p := Proxy{
-			Id:       uuid.NewString(),
-			Ip:       parts[0],
-			Port:     parts[1],
-			Username: parts[2],
-			Password: parts[3],
-		}
-
-		if len(parts) > 4 {
-			p.Name = parts[4]
-		}
+		p := Proxy{}
+		p.Parse(line)
 
 		if err := h.createAndCheckProxy(&p); err != nil {
 			log.Printf("Failed to import proxy %s:%s - %v", p.Ip, p.Port, err)
@@ -251,7 +236,6 @@ func (h handler) ImportProxies(c *gin.Context) {
 			importedCount++
 		}
 	}
-
 	if err := scanner.Err(); err != nil {
 		log.Println("Error reading file for import:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading file"})

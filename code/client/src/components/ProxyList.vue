@@ -37,6 +37,11 @@
     ref="selectableTable"
     @row-selected="onRowSelected"
   )
+    template(#cell(lastStatus)="data")
+      b-badge(v-if="data.item.lastStatus === 1", variant="success") Ok
+      b-badge(v-else-if="data.item.lastStatus === 2", variant="danger") Error
+      b-badge(v-else-if="data.item.lastStatus === 3", variant="warning") Stuck
+      span(v-else) -
     template(#cell(actions)="data")
       b-button(size="sm", variant="primary", @click="() => onVerify(data.item)") Verify
       b-button(size="sm", variant="warning", @click="() => onChange(data.item)") Details/Change
