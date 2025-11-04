@@ -17,8 +17,6 @@
   b-table(
     :items="logs"
     :fields="fields"
-    :current-page="currentPage"
-    :per-page="perPage"
     :busy.sync="isBusy"
     small
     responsive="sm"

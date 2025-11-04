@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import LogList from '@/components/LogList.vue'
+import LogList from '@/components/ProxyVisitLogList.vue'
 
 export default {
   name: 'LogView',

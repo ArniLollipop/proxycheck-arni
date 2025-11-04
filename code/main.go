@@ -27,7 +27,7 @@ func main() {
 	quit := make(chan struct{})
 
 	// Auto-migrate all models
-	if err := db.AutoMigrate(&Proxy{}, &Settings{}, &ProxySpeedLog{}, &ProxyIPLog{}); err != nil {
+	if err := db.AutoMigrate(&Proxy{}, &Settings{}, &ProxySpeedLog{}, &ProxyIPLog{}, &ProxyVisitLogs{}); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
 
@@ -84,6 +84,8 @@ func main() {
 	router.POST("api/import", h.ImportProxies)
 	router.GET("/api/speedLogs", h.GetSpeedLogs)
 	router.GET("/api/ipLogs", h.GetProxyIPLogs)
+	router.POST("/api/proxyVisits", h.CreateProxyVisitLog)
+	router.GET("/api/proxyVisits", h.GetProxyVisitLogs)
 
 	// Handle SPA routing (Vue Router history mode)
 	router.NoRoute(func(c *gin.Context) {

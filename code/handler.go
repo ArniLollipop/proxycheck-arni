@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type handler struct {
@@ -486,6 +487,79 @@ func (h handler) GetProxyIPLogs(c *gin.Context) {
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get IP logs"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  logs,
+		"total": count,
+	})
+}
+
+func (h handler) CreateProxyVisitLog(c *gin.Context) {
+	var visitLogs []ProxyVisitLogs
+	if err := c.ShouldBindJSON(&visitLogs); err != nil {
+		log.Println("Invalid visit log format:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Use CreateInBatches to avoid "too many SQL variables" error with SQLite
+	batchSize := 100 // Insert 100 records at a time
+	if err := h.db.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(&visitLogs, batchSize).Error; err != nil {
+		log.Println("Error saving visit logs:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save visit logs"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"data": visitLogs})
+}
+
+func (h handler) GetProxyVisitLogs(c *gin.Context) {
+	var filters ProxyVisitLogsFilters
+	var err error
+
+	filters.ProxyId = c.Query("proxy_id")
+	filters.SourceIP = c.Query("source_ip")
+	filters.TargetIP = c.Query("target_ip")
+	filters.Domain = c.Query("domain")
+	filters.SortField = c.Query("sort_field")
+
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		return
+	}
+	filters.Page = page
+
+	pageSize, err := strconv.Atoi(c.DefaultQuery("page_size", "100"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page size"})
+		return
+	}
+	filters.PageSize = pageSize
+
+	if startDateStr := c.Query("start_date"); startDateStr != "" {
+		filters.StartDate, err = time.Parse(time.RFC3339, startDateStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start_date format. Use RFC3339 format (e.g., 2006-01-02T15:04:05Z)"})
+			return
+		}
+	}
+
+	if endDateStr := c.Query("end_date"); endDateStr != "" {
+		filters.EndDate, err = time.Parse(time.RFC3339, endDateStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end_date format. Use RFC3339 format (e.g., 2006-01-02T15:04:05Z)"})
+			return
+		}
+	}
+
+	var proxyVisitLogs ProxyVisitLogs
+	logs, count, err := proxyVisitLogs.List(filters, h.db)
+	if err != nil {
+		log.Println("Error fetching visit logs:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch visit logs"})
 		return
 	}
 

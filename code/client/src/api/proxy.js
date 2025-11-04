@@ -209,3 +209,21 @@ export async function getIpLogs(params) {
     throw error;
   }
 }
+
+export async function getProxyVisits(params) {
+  try {
+    const url = new URL('/api/proxyVisits', window.location.origin);
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key] !== null && params[key] !== undefined) {
+          url.searchParams.append(key, params[key]);
+        }
+      });
+    }
+    const response = await fetch(url);
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch proxy visit logs:', error);
+    throw error;
+  }
+}
