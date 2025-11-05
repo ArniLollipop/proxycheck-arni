@@ -8,6 +8,8 @@
     @cancel="handleCancel"
   )
     form(ref="form" @submit.stop.prevent="handleSubmit")
+      b-form-group(label="ID:" v-if="id")
+        b-form-input(v-model="id" disabled)
       b-form-group(label="IP:")
         b-form-input(v-model="ip" required)
       b-form-group(label="Port:")
@@ -51,6 +53,7 @@ export default {
         this.name = newVal.name || ''
         this.phone = newVal.phone || ''
         this.contacts = newVal.contacts || ''
+        this.id = newVal.id || ''
       } else {
         this.resetForm();
       }
@@ -64,7 +67,8 @@ export default {
         password: '',
         name: '',
         phone: '',
-        contacts: ''
+        contacts: '',
+        id: ''
     }
   },
   methods: {

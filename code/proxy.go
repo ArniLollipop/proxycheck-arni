@@ -21,10 +21,11 @@ func CheckSpeed(settings *Settings, proxy *Proxy, db *gorm.DB) (float64, error) 
 	}
 
 	startTime := time.Now()
-	r, err := client.Get(settings.Url)
+	r, err := client.Get("https://alerts.in.ua")
 	if err != nil {
 		return 0, err
 	}
+	duration := time.Since(startTime)
 	defer r.Body.Close()
 
 	if r.StatusCode != http.StatusOK {
@@ -41,26 +42,24 @@ func CheckSpeed(settings *Settings, proxy *Proxy, db *gorm.DB) (float64, error) 
 		return 0, errors.New("downloaded file is empty")
 	}
 
-	duration := time.Since(startTime)
 	if duration.Seconds() == 0 {
 		return 0, errors.New("download duration is zero")
 	}
 
 	// Рассчитываем скорость в КБ/с.
 	// (Количество байт / время в секундах) / 1024
-	speedKBps := (float64(downloadedBytes) / duration.Seconds()) / 1024
-
+	speedKbps := float64(downloadedBytes*8) / 1024 / duration.Seconds()
 	hist := ProxySpeedLog{
 		Id:        uuid.NewString(),
 		ProxyId:   proxy.Id,
 		Timestamp: time.Now(),
-		Speed:     int(speedKBps),
+		Speed:     int(speedKbps),
 	}
 	if err := hist.Save(db); err != nil {
 		log.Println("Error saving speed log:", err)
 	}
 
-	return speedKBps, nil
+	return speedKbps, nil
 }
 
 func Ping(settings *Settings, proxy *Proxy) (int, error) {

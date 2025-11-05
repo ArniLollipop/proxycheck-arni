@@ -105,22 +105,18 @@ func StartHealthCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gor
 				latency, err := Ping(settings, p)
 				if err != nil {
 					log.Printf("Scheduler: Ping failed for proxy %s: %v", p.Ip, err)
-					p.LastStatus = 2 // 2 - failed
+					p.LastStatus = 2
 					p.Failures++
 				} else {
 					p.LastLatency = latency
-					p.LastStatus = 1 // 1 - success
+					p.LastStatus = 1
+					p.Failures = 0
 				}
 
 				// 2. Проверяем Speed
 				speed, err := CheckSpeed(settings, p, db)
 				if err != nil {
 					log.Printf("Scheduler: Speed check failed for proxy %s: %v", p.Ip, err)
-					// Если пинг был успешным, но скорость проверить не удалось, все равно считаем это сбоем.
-					if p.LastStatus == 1 {
-						p.LastStatus = 2 // 2 - failed
-						p.Failures++
-					}
 				} else {
 					p.Speed = int(speed)
 				}

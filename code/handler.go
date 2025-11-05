@@ -183,13 +183,12 @@ func (h handler) VerifyBatch(c *gin.Context) {
 		} else {
 			p.LastLatency = latency
 			p.LastStatus = 1
+			p.Failures = 0
 		}
 
 		speed, err := CheckSpeed(h.settings, &p, h.db)
 		if err != nil {
 			log.Println(err)
-			p.Failures += 1
-			p.LastStatus = 2
 		}
 		p.Speed = int(speed)
 
@@ -328,37 +327,14 @@ func (h handler) ExportSelected(c *gin.Context) {
 		return
 	}
 
-	c.Header("Content-Disposition", "attachment; filename=selected_proxies.csv")
-	c.Header("Content-Type", "text/csv")
-
-	writer := csv.NewWriter(c.Writer)
-	defer writer.Flush()
-
-	headers := []string{"ip", "port", "username", "password", "last_latency", "last_status", "failures", "real_ip", "real_country", "tag", "name", "contacts", "phone"}
-	if err := writer.Write(headers); err != nil {
-		log.Println("Error writing CSV header:", err)
-		return
-	}
+	c.Header("Content-Disposition", "attachment; filename=selected_proxies.txt")
+	c.Header("Content-Type", "text/plain")
 
 	for _, proxy := range proxies {
-		row := []string{
-			proxy.Ip,
-			proxy.Port,
-			proxy.Username,
-			proxy.Password,
-			fmt.Sprint(proxy.LastLatency),
-			strconv.Itoa(proxy.LastStatus),
-			strconv.Itoa(proxy.Failures),
-			proxy.RealIP,
-			proxy.RealCountry,
-			proxy.Tag,
-			proxy.Name,
-			proxy.Contacts,
-			proxy.Phone,
-		}
-		if err := writer.Write(row); err != nil {
-			log.Println("Error writing CSV row:", err)
-			continue
+		if _, err := c.Writer.WriteString(proxy.String() + "\n"); err != nil {
+			log.Println("Error writing proxy to response:", err)
+			// Прерываем, так как дальнейшая запись, скорее всего, не удастся
+			return
 		}
 	}
 }
@@ -474,12 +450,28 @@ func (h handler) GetProxyIPLogs(c *gin.Context) {
 	} else {
 		filters.PageSize = 15
 	}
-	if startDate, err := time.Parse(time.RFC3339, c.Query("start_date")); err == nil {
-		filters.StartDate = startDate
+
+	const layout = "2006-01-02"
+	if startDateStr := c.Query("start_date"); startDateStr != "" {
+		t, err := time.Parse(layout, startDateStr)
+		if err == nil {
+			filters.StartDate = t
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start_date format. Use YYYY-MM-DD."})
+			return
+		}
 	}
-	if endDate, err := time.Parse(time.RFC3339, c.Query("end_date")); err == nil {
-		filters.EndDate = endDate
+
+	if endDateStr := c.Query("end_date"); endDateStr != "" {
+		t, err := time.Parse(layout, endDateStr)
+		if err == nil {
+			filters.EndDate = t
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end_date format. Use YYYY-MM-DD."})
+			return
+		}
 	}
+
 	filters.SortField = c.Query("sort_field")
 
 	var p ProxyIPLog
@@ -538,9 +530,10 @@ func (h handler) GetProxyVisitLogs(c *gin.Context) {
 		return
 	}
 	filters.PageSize = pageSize
+	const layout = "2006-01-02"
 
 	if startDateStr := c.Query("start_date"); startDateStr != "" {
-		filters.StartDate, err = time.Parse(time.RFC3339, startDateStr)
+		filters.StartDate, err = time.Parse(layout, startDateStr)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start_date format. Use RFC3339 format (e.g., 2006-01-02T15:04:05Z)"})
 			return
@@ -548,7 +541,7 @@ func (h handler) GetProxyVisitLogs(c *gin.Context) {
 	}
 
 	if endDateStr := c.Query("end_date"); endDateStr != "" {
-		filters.EndDate, err = time.Parse(time.RFC3339, endDateStr)
+		filters.EndDate, err = time.Parse(layout, endDateStr)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end_date format. Use RFC3339 format (e.g., 2006-01-02T15:04:05Z)"})
 			return

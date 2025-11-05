@@ -37,20 +37,21 @@ func RealIp(stg *Settings, proxy *Proxy, db *gorm.DB, geoIPClient *GeoIPClient) 
 	if err != nil {
 		log.Println("Error reading geoIP data:", err)
 	}
-
-	hist := ProxyIPLog{
-		Id:         uuid.NewString(),
-		ProxyId:    proxy.Id,
-		Timestamp:  time.Now(),
-		Ip:         ip.Ip,
-		OldIp:      proxy.Ip,
-		Country:    ip.Country,
-		OldCountry: proxy.RealCountry,
-		ISP:        orerator.ISP,
-		OldISP:     proxy.Operator,
-	}
-	if err := hist.Save(db); err != nil {
-		log.Println("Error saving IP log:", err)
+	if ip.Ip != proxy.Ip {
+		hist := ProxyIPLog{
+			Id:         uuid.NewString(),
+			ProxyId:    proxy.Id,
+			Timestamp:  time.Now(),
+			Ip:         ip.Ip,
+			OldIp:      proxy.Ip,
+			Country:    ip.Country,
+			OldCountry: proxy.RealCountry,
+			ISP:        orerator.ISP,
+			OldISP:     proxy.Operator,
+		}
+		if err := hist.Save(db); err != nil {
+			log.Println("Error saving IP log:", err)
+		}
 	}
 
 	return ip.Ip, ip.Country, orerator.ISP

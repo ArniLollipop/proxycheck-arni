@@ -125,3 +125,9 @@ func main() {
 
 	log.Println("Server exiting")
 }
+
+//Speed - почему килабити
+// Пароль - спраятать
+// IP - local ip
+// Import - точно также как и экспорт
+// Дати не работают

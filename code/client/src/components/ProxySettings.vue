@@ -1,11 +1,8 @@
 <template lang="pug">
   b-form(inline, @submit.prevent="saveSettings")
     h4.mr-3 Settings
-    label.mr-1(for="settings-url") URL
+    label.mr-1(for="settings-url") URL For Check
     b-form-input#settings-url.mr-2(type="text", v-model="url", style="width: 200px;")
-
-    label.mr-1(for="settings-timeout") Timeout
-    b-form-input#settings-timeout.mr-2(type="number", v-model.number="timeout", style="width: 80px;")
 
     label.mr-1(for="settings-check-ip-interval") CheckIP Interval
     b-form-input#settings-check-ip-interval.mr-2(type="number", v-model.number="checkIPInterval", style="width: 80px;")

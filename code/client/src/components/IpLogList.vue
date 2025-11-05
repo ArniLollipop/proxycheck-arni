@@ -65,10 +65,7 @@ export default {
         { key: 'timestamp', label: 'Date/Time', sortable: true },
         { key: 'ip', label: 'New IP', sortable: true },
         { key: 'old_ip', label: 'Old IP', sortable: false },
-        { key: 'country', label: 'New Country', sortable: true },
-        { key: 'old_country', label: 'Old Country', sortable: false },
-        { key: 'isp', label: 'New ISP', sortable: true },
-        { key: 'old_isp', label: 'Old ISP', sortable: false },
+        { key: 'isp', label: 'ISP', sortable: true },
       ]
     };
   },

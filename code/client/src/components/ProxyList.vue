@@ -15,6 +15,8 @@
         | Verify Selected
       b-button(variant="danger", @click="onDeleteSelected") 
         | Delete Selected
+      b-button(@click="togglePasswordVisibility")
+        | {{ passwordsVisible ? 'Hide' : 'Show' }} Passwords
     b-form(inline)
       b-input-group(size="sm", class="flex-grow-1")
         b-form-input(v-model="search", placeholder="Search...", size="sm")
@@ -37,15 +39,19 @@
     ref="selectableTable"
     @row-selected="onRowSelected"
   )
+    template(#cell(password)="data")
+      span(v-if="passwordsVisible") {{ data.item.password }}
+      span(v-else) ******
     template(#cell(lastStatus)="data")
       b-badge(v-if="data.item.lastStatus === 1", variant="success") Ok
       b-badge(v-else-if="data.item.lastStatus === 2", variant="danger") Error
       b-badge(v-else-if="data.item.lastStatus === 3", variant="warning") Stuck
       span(v-else) -
     template(#cell(actions)="data")
-      b-button(size="sm", variant="primary", @click="() => onVerify(data.item)") Verify
-      b-button(size="sm", variant="warning", @click="() => onChange(data.item)") Details/Change
-      b-button(size="sm", variant="danger", @click="() => onDelete(data.item)") Delete
+      b-button(size="sm", variant="warning", @click="() => onChange(data.item)")
+        b-icon(icon="pencil-square")
+      b-button(size="sm", variant="danger", @click="() => onDelete(data.item)")
+        b-icon(icon="trash")
     template(#cell(selected)='{ rowSelected }')
       template(v-if='rowSelected')
         b-icon(icon='check')
@@ -83,13 +89,14 @@ export default {
       editModalShown: false,
       proxyToEdit: null,
       pendingProxy: null, // Временно храним прокси для обновления списка
+      passwordsVisible: false,
       filters: { port: null, operator: null },
       currentPage: 1,
       perPage: 15, // Можно настроить
       fields: [
         { key: 'selected', label: '', selectable: true },
         { key: 'name', label: 'Name', sortable: true },
-        { key: 'ip', label: 'IP', sortable: true },
+        { key: 'ip', label: 'Local IP', sortable: true },
         { key: 'port', label: 'Port', sortable: true },
         { key: 'phone', label: 'Phone', sortable: true },
         { key: 'realIP', label: 'Real IP', sortable: true },
@@ -133,6 +140,9 @@ export default {
     }
   },
   methods: {
+    togglePasswordVisibility() {
+      this.passwordsVisible = !this.passwordsVisible;
+    },
     handleProxyCreated(newProxy) {
       // Временно сохраняем новый прокси, не обновляя основной список
       this.pendingProxy = newProxy;

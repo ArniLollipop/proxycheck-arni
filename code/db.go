@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -47,6 +48,31 @@ func (s *Proxy) Delete(db *gorm.DB) error {
 
 func (s *Proxy) Get(db *gorm.DB, id string) error {
 	return db.Where("id =?", id).First(&s).Error
+}
+
+func (p *Proxy) Parse(proxy string) {
+	proxy = strings.TrimSpace(proxy)
+	if strings.Contains(proxy, "@") {
+		proxy = strings.Replace(proxy, "@", ":", 1)
+		parts := strings.Split(proxy, ":")
+		p.Username = parts[0]
+		p.Password = parts[1]
+		p.Ip = parts[2]
+		p.Port = parts[3]
+	} else {
+		parts := strings.Split(proxy, ":")
+		p.Ip = parts[0]
+		p.Port = parts[1]
+		p.Username = parts[2]
+		p.Password = parts[3]
+	}
+}
+
+func (s *Proxy) String() string {
+	if s.Username != "" && s.Password != "" {
+		return fmt.Sprintf("%s:%s@%s:%s", s.Username, s.Password, s.Ip, s.Port)
+	}
+	return fmt.Sprintf("%s:%s", s.Ip, s.Port)
 }
 
 type ProxyVisitLogs struct {
@@ -353,26 +379,6 @@ func (p *ProxySpeedLog) List(filters ProxySpeedLogFilters, db *gorm.DB) ([]Proxy
 	var count int64
 	err = db.Model(p).Scopes(p.buildConditionsCount(filters)...).Count(&count).Error
 	return logs, count, err
-}
-
-func (p *Proxy) Parse(proxy string) {
-	parts := strings.Split(proxy, ":")
-	p.Ip = parts[0]
-	p.Port = parts[1]
-	p.Username = parts[2]
-	p.Password = parts[3]
-
-	if len(parts) == 5 {
-		isIP := strings.Split(parts[4], ".")
-		if len(isIP) == 4 {
-			p.RealIP = parts[5]
-		} else {
-			p.Tag = parts[4]
-		}
-	}
-	if len(parts) == 6 {
-		p.RealIP = parts[5]
-	}
 }
 
 type ProxyIPLog struct {
