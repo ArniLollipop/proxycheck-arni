@@ -120,7 +120,8 @@ export default {
         { key: 'operator', label: 'Operator', sortable: true },
         { key: 'lastStatus', label: 'Status', sortable: true },
         { key: 'lastLatency', label: 'Latency (ms)', sortable: true },
-        { key: 'speed', label: 'Speed (kb/s)', sortable: true },
+        { key: 'speed', label: 'Download (mb/s)', sortable: true },
+        { key: 'upload', label: 'Upload (mb/s)', sortable: true },
         { key: 'failures', label: 'Failures', sortable: true },
         { key: 'actions', label: 'Actions' }
       ],

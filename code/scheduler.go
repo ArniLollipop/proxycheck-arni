@@ -114,11 +114,18 @@ func StartHealthCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gor
 				}
 
 				// 2. Проверяем Speed
-				speed, err := CheckSpeed(settings, p, db)
+				speed, upload, err := CheckSpeed(settings, p, db)
 				if err != nil {
 					log.Printf("Scheduler: Speed check failed for proxy %s: %v", p.Ip, err)
 				} else {
 					p.Speed = int(speed)
+					if p.Speed == 0 {
+						p.Speed = 1
+					}
+					p.Upload = int(upload)
+					if p.Upload == 0 {
+						p.Upload = 1
+					}
 				}
 
 				// Сохраняем обновленные данные

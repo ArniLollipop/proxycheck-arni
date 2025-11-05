@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net"
 	"strings"
 	"time"
 
@@ -26,6 +28,7 @@ type Proxy struct {
 	Operator     string    `json:"operator"`
 	Phone        string    `json:"phone"`
 	Speed        int       `json:"speed"`
+	Upload       int       `json:"upload"`
 	Name         string    `json:"name"`
 }
 
@@ -52,19 +55,48 @@ func (s *Proxy) Get(db *gorm.DB, id string) error {
 
 func (p *Proxy) Parse(proxy string) {
 	proxy = strings.TrimSpace(proxy)
+	proxy = strings.TrimPrefix(proxy, "http://")
+	proxy = strings.TrimPrefix(proxy, "https://")
+
 	if strings.Contains(proxy, "@") {
-		proxy = strings.Replace(proxy, "@", ":", 1)
-		parts := strings.Split(proxy, ":")
-		p.Username = parts[0]
-		p.Password = parts[1]
-		p.Ip = parts[2]
-		p.Port = parts[3]
+		// Format: username:password@ip:port
+		parts := strings.SplitN(proxy, "@", 2)
+		userpass := strings.SplitN(parts[0], ":", 2)
+		hostport := strings.SplitN(parts[1], ":", 2)
+
+		if len(userpass) == 2 {
+			p.Username = userpass[0]
+			p.Password = userpass[1]
+		}
+		if len(hostport) == 2 {
+			p.Ip = hostport[0]
+			p.Port = hostport[1]
+		}
 	} else {
+		// Format: ip:port or ip:port:username:password or username:password:ip:port
 		parts := strings.Split(proxy, ":")
-		p.Ip = parts[0]
-		p.Port = parts[1]
-		p.Username = parts[2]
-		p.Password = parts[3]
+		if len(parts) == 4 {
+			// Assuming username:password:ip:port based on your examples
+			p.Username = parts[0]
+			p.Password = parts[1]
+			p.Ip = parts[2]
+			p.Port = parts[3]
+		} else if len(parts) == 2 {
+			// Format: ip:port
+			p.Ip = parts[0]
+			p.Port = parts[1]
+		}
+	}
+
+	if p.Ip != "" && net.ParseIP(p.Ip) == nil {
+		// p.Ip is not a valid IP, so it's probably a domain name. Let's resolve it.
+		ips, err := net.LookupIP(p.Ip)
+		if err != nil {
+			log.Printf("Could not resolve host: %s, error: %v", p.Ip, err)
+		} else if len(ips) > 0 {
+			// Take the first resolved IP
+			p.Ip = ips[0].String()
+		}
 	}
 }
 
@@ -257,6 +289,7 @@ type ProxySpeedLog struct {
 	ProxyId   string    `json:"proxy_id"`
 	Timestamp time.Time `json:"timestamp"`
 	Speed     int       `json:"speed"`
+	Upload    int       `json:"upload"`
 }
 
 func (s *ProxySpeedLog) Save(db *gorm.DB) error {

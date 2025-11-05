@@ -53,13 +53,14 @@ func (h handler) createAndCheckProxy(p *Proxy) error {
 	} else {
 		p.LastStatus = 1 // 1 - success
 	}
-	speed, err := CheckSpeed(h.settings, p, h.db)
+	speed, upload, err := CheckSpeed(h.settings, p, h.db)
 	if err != nil {
 		log.Println(err)
 		p.LastStatus = 2 // 2 - failed
 		p.Failures = 1
 	}
 	p.Speed = int(speed)
+	p.Upload = int(upload)
 	p.LastLatency = latency
 	p.RealIP, p.RealCountry, p.Operator = RealIp(h.settings, p, h.db, h.geoIPClient)
 
@@ -145,7 +146,7 @@ func (h handler) Verify(c *gin.Context) {
 		p.LastStatus = 2
 		p.Failures += 1
 	}
-	speed, err := CheckSpeed(h.settings, &p, h.db)
+	speed, upload, err := CheckSpeed(h.settings, &p, h.db)
 	if err != nil {
 		log.Println(err)
 		p.LastStatus = 2
@@ -154,6 +155,7 @@ func (h handler) Verify(c *gin.Context) {
 		p.LastStatus = 1
 	}
 	p.Speed = int(speed)
+	p.Upload = int(upload)
 	p.LastLatency = latency
 	p.RealIP, p.RealCountry, p.Operator = RealIp(h.settings, &p, h.db, h.geoIPClient)
 	err = p.Save(h.db)
@@ -186,11 +188,12 @@ func (h handler) VerifyBatch(c *gin.Context) {
 			p.Failures = 0
 		}
 
-		speed, err := CheckSpeed(h.settings, &p, h.db)
+		speed, upload, err := CheckSpeed(h.settings, &p, h.db)
 		if err != nil {
 			log.Println(err)
 		}
 		p.Speed = int(speed)
+		p.Upload = int(upload)
 
 		p.RealIP, p.RealCountry, p.Operator = RealIp(h.settings, &p, h.db, h.geoIPClient)
 		err = p.Save(h.db)
@@ -228,8 +231,9 @@ func (h handler) ImportProxies(c *gin.Context) {
 
 		p := Proxy{}
 		p.Parse(line)
+		p.Id = uuid.NewString()
 
-		if err := h.createAndCheckProxy(&p); err != nil {
+		if err := p.Save(h.db); err != nil {
 			log.Printf("Failed to import proxy %s:%s - %v", p.Ip, p.Port, err)
 			failedLines++
 		} else {
