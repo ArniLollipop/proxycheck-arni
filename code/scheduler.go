@@ -39,19 +39,30 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 			log.Printf("Scheduler: Found %d proxies to check.", len(proxies))
 
 			// Проходим по каждому прокси.
-			for i := range proxies {
+			for _, p := range proxies {
 				// Важно: используем &proxies[i], чтобы работать с оригинальным элементом слайса, а не с его копией.
-				p := &proxies[i]
 
 				log.Printf("Scheduler: Checking IP for proxy %s (%s)", p.Ip, p.Id)
 
 				// Вызываем существующую функцию для получения реального IP.
-				realIP, realCountry, operator := RealIp(settings, p, db, geoIPClient)
+				realIP, realCountry, operator := RealIp(settings, &p, db, geoIPClient)
 
 				// Обновляем поля в объекте прокси.
 				p.RealIP = realIP
 				p.RealCountry = realCountry
 				p.Operator = operator
+
+				// 1. Проверяем Ping
+				latency, err := Ping(settings, &p)
+				if err != nil {
+					log.Printf("Scheduler: Ping failed for proxy %s: %v", p.Ip, err)
+					p.LastStatus = 2
+					p.Failures++
+				} else {
+					p.LastLatency = latency
+					p.LastStatus = 1
+					p.Failures = 0
+				}
 
 				// Сохраняем обновленный прокси в базе данных.
 				if err := p.Save(db); err != nil {
@@ -97,24 +108,11 @@ func StartHealthCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gor
 
 			log.Printf("Scheduler: Found %d proxies for health check.", len(proxies))
 
-			for i := range proxies {
-				p := &proxies[i]
+			for _, p := range proxies {
 				log.Printf("Scheduler: Health checking proxy %s (%s)", p.Ip, p.Id)
 
-				// 1. Проверяем Ping
-				latency, err := Ping(settings, p)
-				if err != nil {
-					log.Printf("Scheduler: Ping failed for proxy %s: %v", p.Ip, err)
-					p.LastStatus = 2
-					p.Failures++
-				} else {
-					p.LastLatency = latency
-					p.LastStatus = 1
-					p.Failures = 0
-				}
-
 				// 2. Проверяем Speed
-				speed, upload, err := CheckSpeed(settings, p, db)
+				speed, upload, err := CheckSpeed(settings, &p, db)
 				if err != nil {
 					log.Printf("Scheduler: Speed check failed for proxy %s: %v", p.Ip, err)
 				} else {

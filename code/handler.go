@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/csv"
 	"fmt"
 	"log"
 	"net/http"
@@ -279,37 +278,13 @@ func (h handler) ExportAll(c *gin.Context) {
 		return
 	}
 
-	c.Header("Content-Disposition", "attachment; filename=proxies.csv")
-	c.Header("Content-Type", "text/csv")
-
-	writer := csv.NewWriter(c.Writer)
-	defer writer.Flush()
-
-	headers := []string{"ip", "port", "username", "password", "last_latency", "last_status", "failures", "real_ip", "real_country", "tag", "name", "contacts", "phone"}
-	if err := writer.Write(headers); err != nil {
-		log.Println("Error writing CSV header:", err)
-		return
-	}
+	c.Header("Content-Disposition", "attachment; filename=proxies.txt")
+	c.Header("Content-Type", "text/plain")
 
 	for _, proxy := range list {
-		row := []string{
-			proxy.Ip,
-			proxy.Port,
-			proxy.Username,
-			proxy.Password,
-			fmt.Sprint(proxy.LastLatency),
-			strconv.Itoa(proxy.LastStatus),
-			strconv.Itoa(proxy.Failures),
-			proxy.RealIP,
-			proxy.RealCountry,
-			proxy.Tag,
-			proxy.Name,
-			proxy.Contacts,
-			proxy.Phone,
-		}
-		if err := writer.Write(row); err != nil {
-			log.Println("Error writing CSV row:", err)
-			continue
+		if _, err := c.Writer.WriteString(proxy.String() + "\n"); err != nil {
+			log.Println("Error writing proxy to response:", err)
+			return
 		}
 	}
 }
