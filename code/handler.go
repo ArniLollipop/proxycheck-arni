@@ -149,8 +149,6 @@ func (h handler) Verify(c *gin.Context) {
 	speed, upload, err := CheckSpeed(h.settings, &p, h.db)
 	if err != nil {
 		log.Println(err)
-		p.LastStatus = 2
-		p.Failures += 1
 	} else {
 		p.LastStatus = 1
 	}

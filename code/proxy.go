@@ -29,6 +29,12 @@ func CheckSpeed(settings *Settings, proxy *Proxy, db *gorm.DB) (float64, float64
 	tg.UploadTest()
 	upload := tg.ULSpeed.Mbps()
 	download := tg.DLSpeed.Mbps()
+	if upload == 0 {
+		upload = 1
+	}
+	if download == 0 {
+		download = 1
+	}
 
 	hist := ProxySpeedLog{
 		Id:        uuid.NewString(),
