@@ -47,7 +47,22 @@
       b-badge(v-else-if="data.item.lastStatus === 2", variant="danger") Error
       b-badge(v-else-if="data.item.lastStatus === 3", variant="warning") Stuck
       span(v-else) -
+    template(#cell(realIP)="data")
+      div.d-flex.justify-content-between.align-items-center
+        span {{ data.item.realIP }}
+        router-link(:to="{ path: '/ip_logs', query: { proxy_id: data.item.id } }", target="_blank")
+          b-button(size="sm", variant="outline-secondary")
+            b-icon(icon="clock-history")
+    template(#cell(speed)="data")
+      div.d-flex.justify-content-between.align-items-center
+        span {{ data.item.speed }}
+        router-link(:to="{ path: '/speed_logs', query: { proxy_id: data.item.id } }", target="_blank")
+          b-button(size="sm", variant="outline-secondary")
+            b-icon(icon="clock-history")
     template(#cell(actions)="data")
+      router-link(:to="{ path: '/visit_logs', query: { proxy_id: data.item.id } }", target="_blank")
+        b-button(size="sm", variant="outline-secondary", class="mr-1")
+          b-icon(icon="clock-history")
       b-button(size="sm", variant="warning", @click="() => onChange(data.item)")
         b-icon(icon="pencil-square")
       b-button(size="sm", variant="danger", @click="() => onDelete(data.item)")

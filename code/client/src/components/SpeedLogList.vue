@@ -70,6 +70,10 @@ export default {
     };
   },
   async created() {
+    const proxyIdFromUrl = this.$route.query.proxy_id;
+    if (proxyIdFromUrl) {
+      this.filters.proxy_id = proxyIdFromUrl;
+    }
     await this.loadProxies();
     await this.fetchLogs();
   },
