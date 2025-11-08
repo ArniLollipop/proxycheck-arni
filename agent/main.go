@@ -14,7 +14,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"time"
 )
 
@@ -34,27 +33,13 @@ type AgentState struct {
 const stateFileName = "agent_state.json"
 const batchSize = 10000
 
-var (
-	// Regex for format 1: 2025-10-29 10:00:01 PROXY.2315 ... 65.109.18.254:35366 85.198.79.24:443 ... CONNECT static-basket-01.wbbasket.ru:443 ...
-	logFmt1 = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\s(PROXY\.\d+)\s+.*\s([\d\.]+):\d+\s([\d\.]+):\d+.*\sCONNECT\s([\w\.-]+):\d+`)
-	// Regex for format 2: 94.130.134.120 - DiamondBlond [28/Oct/2025:00:00:04 +0300] "CONNECT adsmanager-graph.facebook.com:443" ... SOCK5/185.60.218.19:443
-	logFmt2 = regexp.MustCompile(`^([\d\.]+)\s-\s(\w+)\s\[(.*?)\]\s"CONNECT\s([\w\.-]+):\d+"\s+.*\sSOCK5/([\d\.]+):\d+`)
-)
-
 func main() {
 	logPath := flag.String("log-path", ".", "Path to the directory with log files")
 	apiHost := flag.String("api-host", "http://localhost:8080", "API host URL")
-	proxyId := flag.String("proxy-id", "", "Proxy ID to assign to log entries")
 	flag.Parse()
-
-	if *proxyId == "" {
-		log.Fatal("proxy-id flag is required")
-	}
-
 	log.Println("Agent started...")
 	log.Printf("Log directory: %s", *logPath)
 	log.Printf("API Host: %s", *apiHost)
-	log.Printf("Proxy ID: %s", *proxyId)
 
 	logFile, err := findLatestLogFile(*logPath)
 	if err != nil {
@@ -69,7 +54,7 @@ func main() {
 		log.Printf("Resuming from last timestamp: %s", lastTimestamp.Format(time.RFC3339))
 	}
 
-	logs, newLastTimestamp, err := parseLogFile(logFile, lastTimestamp, *proxyId)
+	logs, newLastTimestamp, err := parseLogFile(logFile, lastTimestamp)
 	if err != nil {
 		log.Fatalf("Error parsing log file: %v", err)
 	}
@@ -125,7 +110,7 @@ func findLatestLogFile(dir string) (string, error) {
 	return filepath.Join(dir, latestFile.Name()), nil
 }
 
-func parseLogFile(filePath string, lastTimestamp time.Time, proxyId string) ([]ProxyVisitLogs, time.Time, error) {
+func parseLogFile(filePath string, lastTimestamp time.Time) ([]ProxyVisitLogs, time.Time, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, lastTimestamp, err
@@ -138,14 +123,20 @@ func parseLogFile(filePath string, lastTimestamp time.Time, proxyId string) ([]P
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		logEntry, err := parseLogLine(line, proxyId)
+		logEntry, err := ParseLog(line)
 		if err != nil {
-			// log.Printf("Skipping unparsable line: %s", line)
 			continue
 		}
 
 		if logEntry.Timestamp.After(lastTimestamp) {
-			logs = append(logs, *logEntry)
+			logs = append(logs, ProxyVisitLogs{
+				Id:        generateId(line),
+				ProxyId:   logEntry.Username,
+				Timestamp: logEntry.Timestamp,
+				SourceIP:  logEntry.ClientIP,
+				TargetIP:  logEntry.TargetIP,
+				Domain:    logEntry.TargetHost,
+			})
 			if logEntry.Timestamp.After(latestTimestamp) {
 				latestTimestamp = logEntry.Timestamp
 			}
@@ -159,46 +150,72 @@ func parseLogFile(filePath string, lastTimestamp time.Time, proxyId string) ([]P
 	return logs, latestTimestamp, nil
 }
 
-func parseLogLine(line string, proxyId string) (*ProxyVisitLogs, error) {
-	// Try format 1 first
-	matches1 := logFmt1.FindStringSubmatch(line)
-	if len(matches1) >= 6 {
-		timestamp, err := time.Parse("2006-01-02 15:04:05", matches1[1])
-		if err != nil {
-			return nil, err
-		}
-		return &ProxyVisitLogs{
-			Id:        generateId(line),
-			ProxyId:   proxyId,
-			Timestamp: timestamp,
-			SourceIP:  matches1[3],
-			TargetIP:  matches1[4],
-			Domain:    matches1[5],
+type LogEntry struct {
+	Timestamp  time.Time
+	Username   string
+	ClientIP   string
+	ClientPort string
+	TargetHost string
+	TargetIP   string
+	TargetPort string
+	Method     string
+	Protocol   string
+	StatusCode string
+	BytesSent  int64
+	BytesRecv  int64
+	Raw        string
+}
+
+var (
+	reSocks  = regexp.MustCompile(`^([\d.]+)\s+-\s+(\S+)\s+\[(\d{2}/\w{3}/\d{4}:\d{2}:\d{2}:\d{2}\s+[+-]\d{4})\]\s+"CONNECT\s+([^"]+)"\s+(\d+)\s+(\d+)\s+(\d+)\s+SOCK5/([\d.]+):(\d+)$`)
+	re3Proxy = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s+\S+\s+(\d+)\s+(\S+)\s+([\d.]+):(\d+)\s+([\d.]+):(\d+)\s+[\d.]+:\d+\s+(\d+)\s+(\d+)\s+(\S+)\s+CONNECT\s+(\S+):(\d+)\s+HTTP/\d\.\d$`)
+)
+
+func ParseLog(line string) (*LogEntry, error) {
+	if m := reSocks.FindStringSubmatch(line); m != nil {
+		t, _ := time.Parse("02/Jan/2006:15:04:05 -0700", m[3])
+		return &LogEntry{
+			Timestamp:  t,
+			Username:   m[2],
+			ClientIP:   m[1],
+			TargetHost: m[4],
+			StatusCode: m[5],
+			BytesSent:  parseInt(m[6]),
+			BytesRecv:  parseInt(m[7]),
+			Protocol:   "SOCKS5",
+			TargetIP:   m[8],
+			TargetPort: m[9],
+			Method:     "CONNECT",
+			Raw:        line,
 		}, nil
 	}
 
-	// Try format 2 second
-	matches2 := logFmt2.FindStringSubmatch(line)
-	if len(matches2) >= 6 {
-		// Parse timestamp from format like "28/Oct/2025:00:00:04 +0300"
-		timestampStr := matches2[3]
-		// Remove timezone part for parsing
-		timestampStr = strings.Split(timestampStr, " ")[0]
-		timestamp, err := time.Parse("02/Jan/2006:15:04:05", timestampStr)
-		if err != nil {
-			return nil, err
-		}
-		return &ProxyVisitLogs{
-			Id:        generateId(line),
-			ProxyId:   proxyId,
-			Timestamp: timestamp,
-			SourceIP:  matches2[1],
-			TargetIP:  matches2[5],
-			Domain:    matches2[4],
+	if m := re3Proxy.FindStringSubmatch(line); m != nil {
+		t, _ := time.Parse("2006-01-02 15:04:05", m[1])
+		return &LogEntry{
+			Timestamp:  t,
+			Username:   m[3],
+			ClientIP:   m[4],
+			ClientPort: m[5],
+			TargetIP:   m[6],
+			TargetPort: m[7],
+			StatusCode: m[2],
+			BytesSent:  parseInt(m[8]),
+			BytesRecv:  parseInt(m[9]),
+			TargetHost: m[10],
+			Method:     "CONNECT",
+			Protocol:   "HTTP",
+			Raw:        line,
 		}, nil
 	}
 
-	return nil, fmt.Errorf("unparsable log line")
+	return nil, fmt.Errorf("unknown log format")
+}
+
+func parseInt(s string) int64 {
+	var v int64
+	fmt.Sscan(s, &v)
+	return v
 }
 
 func generateId(rawLine string) string {
