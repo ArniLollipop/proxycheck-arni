@@ -489,6 +489,14 @@ func (h handler) GetProxyVisitLogs(c *gin.Context) {
 	var err error
 
 	filters.ProxyId = c.Query("proxy_id")
+	if filters.ProxyId != "" {
+		proxy := &Proxy{}
+		if err = h.db.Where("id =?", filters.ProxyId).First(proxy).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Proxy not found"})
+			return
+		}
+		filters.ProxyId = proxy.Username
+	}
 	filters.SourceIP = c.Query("source_ip")
 	filters.TargetIP = c.Query("target_ip")
 	filters.Domain = c.Query("domain")
