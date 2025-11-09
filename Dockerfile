@@ -1,48 +1,45 @@
-
 # --- Этап 1: Сборка фронтенда ---
 FROM node:18-alpine AS frontend-builder
 
-# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем package.json и package-lock.json для установки зависимостей
+# Копируем package.json и package-lock.json
 COPY code/client/package*.json ./
 
-# Устанавливаем зависимости npm
+# Устанавливаем зависимости
 RUN npm install
 
-# Копируем остальные исходники фронтенда
+# Копируем исходники фронтенда
 COPY code/client/ ./
 
-# Собираем фронтенд. Результат будет в папке /app/dist
+# Сборка фронтенда
 RUN npm run build
 
 
 # --- Этап 2: Сборка бэкенда ---
 FROM golang:1.24-alpine AS backend-builder
 
-# Устанавливаем C-компилятор, необходимый для CGO и SQLite
+# Устанавливаем C-компилятор для CGO и SQLite
 RUN apk add --no-cache build-base
 
 WORKDIR /app
 
-# Копируем файлы зависимостей Go и загружаем их
+# Копируем зависимости Go
 COPY code/go.mod code/go.sum ./
 RUN go mod download
 
-# Копируем все остальные исходники бэкенда
+# Копируем остальные исходники Go
 COPY code/ ./
 
-# Копируем собранный фронтенд из предыдущего этапа
+# Копируем собранный фронтенд
 COPY --from=frontend-builder /app/dist ./client/dist
 
-# Копируем базу данных GeoIP
+# Копируем необходимые файлы рантайма
 COPY code/GeoIP2-ISP.mmdb ./
 
-# Копируем базу данных SQLite
-COPY code/database ./database
+# Не копируем базу SQLite, она будет примонтирована с хоста
 
-# Собираем Go-приложение с включенным CGO
+# Сборка Go-приложения
 RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-w -s' -o /app/main .
 
 
@@ -51,15 +48,15 @@ FROM alpine:latest
 
 WORKDIR /app
 
-# Копируем скомпилированный бинарник из стадии сборки бэкенда
-COPY --from=backend-builder /app/main .
+# Устанавливаем runtime зависимости (если нужны)
+RUN apk add --no-cache sqlite
 
-# Копируем необходимые для работы рантайм-файлы
+# Копируем бинарник и фронтенд
+COPY --from=backend-builder /app/main .
 COPY --from=backend-builder /app/client/dist ./client/dist
 COPY --from=backend-builder /app/GeoIP2-ISP.mmdb ./
-COPY --from=backend-builder /app/database ./database
 
-# Открываем порт, который слушает наше приложение
+# Открываем порт приложения
 EXPOSE 8080
 
 # Команда для запуска приложения
