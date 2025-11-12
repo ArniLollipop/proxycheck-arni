@@ -38,12 +38,13 @@ func RealIp(stg *Settings, proxy *Proxy, db *gorm.DB, geoIPClient *GeoIPClient) 
 		log.Println("Error reading geoIP data:", err)
 	}
 	if ip.Ip != proxy.Ip {
+		proxy.LastIPChange = time.Now()
 		hist := ProxyIPLog{
 			Id:         uuid.NewString(),
 			ProxyId:    proxy.Id,
 			Timestamp:  time.Now(),
 			Ip:         ip.Ip,
-			OldIp:      proxy.Ip,
+			OldIp:      proxy.RealIP,
 			Country:    ip.Country,
 			OldCountry: proxy.RealCountry,
 			ISP:        orerator.ISP,

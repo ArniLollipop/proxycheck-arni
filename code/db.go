@@ -30,6 +30,8 @@ type Proxy struct {
 	Speed        int       `json:"speed"`
 	Upload       int       `json:"upload"`
 	Name         string    `json:"name"`
+	Uptime       int       `json:"uptime"`
+	LastCheck    time.Time `json:"last_check"`
 }
 
 func (s *Proxy) Save(db *gorm.DB) error {

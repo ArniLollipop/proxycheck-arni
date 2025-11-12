@@ -46,6 +46,7 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 
 				// Вызываем существующую функцию для получения реального IP.
 				realIP, realCountry, operator := RealIp(settings, &p, db, geoIPClient)
+				p.LastCheck = time.Now()
 
 				// Обновляем поля в объекте прокси.
 				p.RealIP = realIP
@@ -62,6 +63,12 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 					p.LastLatency = latency
 					p.LastStatus = 1
 					p.Failures = 0
+				}
+				if p.LastStatus == 2 {
+					p.Uptime = 0
+				} else {
+					uptime := time.Since(p.LastCheck).Minutes()
+					p.Uptime += int(uptime)
 				}
 
 				// Сохраняем обновленный прокси в базе данных.

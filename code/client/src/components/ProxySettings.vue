@@ -10,6 +10,12 @@
     label.mr-1(for="settings-speed-check-interval") Speed Check Interval
     b-form-input#settings-speed-check-interval.mr-2(type="number", v-model.number="speedCheckInterval", style="width: 80px;")
 
+    label.mr-1(for="settings-username") Username
+    b-form-input#settings-username.mr-2(type="text", v-model="username", style="width: 120px;")
+
+    label.mr-1(for="settings-password") Password
+    b-form-input#settings-password.mr-2(type="password", v-model="password", style="width: 120px;")
+
     b-button(type="submit", variant="primary") Save
 </template>
 
@@ -24,6 +30,8 @@ export default {
         timeout: 0,
         checkIPInterval: 0,
         speedCheckInterval: 0,
+        username: '',
+        password: '',
     }
   },
   async created() {
@@ -39,6 +47,8 @@ export default {
         this.timeout = settings.timeout;
         this.checkIPInterval = settings.checkIPInterval;
         this.speedCheckInterval = settings.speedCheckInterval;
+        this.username = settings.username;
+        this.password = settings.password;
       } catch (error) {
         console.error('Failed to load settings:', error);
         alert('Failed to load settings.');
@@ -48,10 +58,12 @@ export default {
       try {
       
         const settingsToSave = {
-          Url: this.url,
-          Timeout: this.timeout,
-          CheckIPInterval: this.checkIPInterval,
-          SpeedCheckInterval: this.speedCheckInterval,
+          url: this.url,
+          timeout: this.timeout,
+          checkIPInterval: this.checkIPInterval,
+          speedCheckInterval: this.speedCheckInterval,
+          username: this.username,
+          password: this.password,
         };
         await updateSettings(settingsToSave);
         alert('Settings saved successfully!');

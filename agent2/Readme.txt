@@ -7,3 +7,5 @@ schtasks /Create /TN "AgentDailyRun" /TR "\"C:\agent.exe\" --log-path=\"C:\Agent
 Где --log-path - путь к папке логов 
 
 Готово Теперь раз в сутки будет проверять логи 
+
+

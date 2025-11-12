@@ -47,6 +47,8 @@
       b-badge(v-else-if="data.item.lastStatus === 2", variant="danger") Error
       b-badge(v-else-if="data.item.lastStatus === 3", variant="warning") Stuck
       span(v-else) -
+    template(#cell(uptime)="data")
+      span {{ formatUptime(data.item.uptime) }}
     template(#cell(realIP)="data")
       div.d-flex.justify-content-between.align-items-center
         span {{ data.item.realIP }}
@@ -107,7 +109,7 @@ export default {
       passwordsVisible: false,
       filters: { port: null, operator: null },
       currentPage: 1,
-      perPage: 15, // Можно настроить
+      perPage: 100,
       fields: [
         { key: 'selected', label: '', selectable: true },
         { key: 'name', label: 'Name', sortable: true },
@@ -118,6 +120,8 @@ export default {
         { key: 'username', label: 'Username' },
         { key: 'password', label: 'Password' },
         { key: 'operator', label: 'Operator', sortable: true },
+        { key: 'lastIPChange', label: 'Last IP Change', sortable: true },
+        { key: 'uptime', label: 'Uptime', sortable: true },
         { key: 'lastStatus', label: 'Status', sortable: true },
         { key: 'lastLatency', label: 'Latency (ms)', sortable: true },
         { key: 'speed', label: 'Download (mb/s)', sortable: true },
@@ -140,22 +144,82 @@ export default {
       return [{ value: null, text: 'Operator' }, ...options];
     },
     filteredData() {
-      return this.proxies.filter(item => {
-        let matched  = true
-        const query = this.search.toLowerCase()
-        matched = query? item.name.toLowerCase().includes(query) ||
-                         item.ip.toLowerCase().includes(query) ||
-                         item.port.toLowerCase().includes(query) ||
-                         item.phone.toLowerCase().includes(query) ||
-                         item.operator.toLowerCase().includes(query)
-               : true
-        matched = this.filters.port? item.port === this.filters.port : matched
-        matched = this.filters.operator? item.operator === this.filters.operator : matched
-        return matched
-      })
+      const oneDay = 24 * 60 * 60 * 1000; // 24 часа в миллисекундах
+      const now = new Date();
+
+      const filtered = this.proxies.filter(item => {
+        let matched = true;
+        const query = this.search.toLowerCase();
+
+        if (query) {
+          const searchIn = [
+            item.name,
+            item.ip,
+            item.port,
+            item.phone,
+            item.operator,
+            item.realIP,
+            item.username,
+          ];
+          matched = searchIn.some(field => field && field.toLowerCase().includes(query));
+        }
+
+        if (matched && this.filters.port) {
+          matched = item.port === this.filters.port;
+        }
+
+        if (matched && this.filters.operator) {
+          matched = item.operator === this.filters.operator;
+        }
+
+        return matched;
+      });
+
+      return filtered.map(item => {
+        const newItem = { ...item };
+        if (newItem.lastIPChange) {
+          const lastChangeDate = new Date(newItem.lastIPChange);
+          // Проверяем, прошло ли больше 24 часов
+          if (now - lastChangeDate > oneDay) {
+            newItem._rowVariant = 'danger'; // Используем 'danger' для красного цвета
+          }
+          // Рассчитываем uptime в минутах
+          const uptimeInMinutes = Math.floor((now - lastChangeDate) / (1000 * 60));
+          newItem.uptime = uptimeInMinutes;
+        } else {
+          newItem.uptime = null;
+        }
+        return newItem;
+      });
     }
   },
   methods: {
+    formatUptime(minutes) {
+      if (minutes === null || isNaN(minutes)) {
+        return '-';
+      }
+      if (minutes <= 6) {
+        return `${minutes}m`;
+      }
+
+      const days = Math.floor(minutes / (60 * 24));
+      const hours = Math.floor((minutes % (60 * 24)) / 60);
+      const mins = minutes % 60;
+
+      let result = '';
+      if (days > 0) {
+        result += `${days}d `;
+      }
+      if (hours > 0) {
+        result += `${hours}h `;
+      }
+      // Показываем минуты, если нет других единиц или они не равны нулю
+      if (mins > 0 || result === '') {
+        result += `${mins}m`;
+      }
+
+      return result.trim();
+    },
     togglePasswordVisibility() {
       this.passwordsVisible = !this.passwordsVisible;
     },

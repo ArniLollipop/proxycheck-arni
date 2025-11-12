@@ -16,9 +16,10 @@ import (
 )
 
 type handler struct {
-	db          *gorm.DB
-	settings    *Settings
-	geoIPClient *GeoIPClient
+	db            *gorm.DB
+	settings      *Settings
+	geoIPClient   *GeoIPClient
+	restartSignal chan<- struct{}
 }
 
 func (h handler) ProxyList(c *gin.Context) {
@@ -343,9 +344,18 @@ func (h handler) UpdateSettings(c *gin.Context) {
 	}
 
 	// Обновляем настройки в текущем экземпляре обработчика
+	// Это полезно для немедленного ответа, но главное - последующий перезапуск
 	*h.settings = req
 
 	c.JSON(http.StatusOK, gin.H{"data": h.settings})
+
+	// Отправляем сигнал на перезапуск приложения
+	log.Println("Settings updated. Sending restart signal...")
+	go func() {
+		// Небольшая задержка, чтобы успеть отправить ответ клиенту
+		time.Sleep(1 * time.Second)
+		h.restartSignal <- struct{}{}
+	}()
 }
 
 func (h handler) GetSpeedLogs(c *gin.Context) {

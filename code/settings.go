@@ -11,10 +11,12 @@ type Settings struct {
 	Repeat             int    `json:"repeat"`
 	CheckIPInterval    int    `json:"checkIPInterval"`
 	SpeedCheckInterval int    `json:"speedCheckInterval"`
+	Username           string `json:"username"`
+	Password           string `json:"password"`
 }
 
 func (s *Settings) Save(db *gorm.DB) error {
-	s.ID = 1 // Устанавливаем ID в 1, чтобы всегда обновлять одну и ту же запись
+	s.ID = 1
 	return db.Save(s).Error
 }
 
@@ -28,6 +30,12 @@ func (s *Settings) Get(db *gorm.DB) (*Settings, error) {
 func SettingsDefault(db *gorm.DB) *Settings {
 	s := Settings{}
 	settings, err := s.Get(db)
+	if settings.Username == "" {
+		settings.Username = "default_username"
+		settings.Password = "default_password"
+		settings.Save(db)
+	}
+
 	if err == gorm.ErrRecordNotFound {
 		stg := &Settings{
 			ID:                 1,
@@ -36,6 +44,8 @@ func SettingsDefault(db *gorm.DB) *Settings {
 			Repeat:             15,
 			CheckIPInterval:    15,
 			SpeedCheckInterval: 1440,
+			Username:           "default_username",
+			Password:           "default_password",
 		}
 		err := stg.Save(db)
 		if err != nil {

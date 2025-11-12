@@ -34,11 +34,14 @@ func main() {
 	// Initialize Settings from the single database
 	settings := SettingsDefault(db)
 
+	// Канал для инициирования перезапуска из API
+	restartSignal := make(chan struct{}, 1)
+
 	// Initialize Gin router
 	router := gin.Default()
 
 	// Serve frontend static files
-	router.Use(static.Serve("/", static.LocalFile("./client/dist", true)))
+	router.Use(gin.BasicAuth(gin.Accounts{settings.Username: settings.Password}), static.Serve("/", static.LocalFile("./client/dist", true)))
 
 	// Init Geoip service
 	geoIP, err := NewGeoIPClient("GeoIP2-ISP.mmdb")
@@ -52,9 +55,10 @@ func main() {
 
 	// Create handler instance
 	h := handler{
-		db:          db,
-		settings:    settings,
-		geoIPClient: geoIP,
+		db:            db,
+		settings:      settings,
+		geoIPClient:   geoIP,
+		restartSignal: restartSignal, // Передаем канал в обработчик
 	}
 
 	// API routes for proxies
@@ -69,7 +73,9 @@ func main() {
 	}
 
 	// API routes for settings
+
 	settingsRoutes := router.Group("api/settings")
+
 	{
 		settingsRoutes.GET("", h.GetSettings)
 		settingsRoutes.PUT("", h.UpdateSettings)
@@ -77,6 +83,7 @@ func main() {
 
 	// Export routes
 	exportRoutes := router.Group("api/export")
+
 	{
 		exportRoutes.GET("all", h.ExportAll)
 		exportRoutes.GET("selected", h.ExportSelected)
@@ -112,7 +119,15 @@ func main() {
 	// Graceful shutdown
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-	<-stop // Ожидаем сигнала завершения.
+
+	// Ожидаем сигнала завершения (либо от ОС, либо от нашего API)
+	select {
+	case <-stop:
+		log.Println("Received shutdown signal from OS.")
+	case <-restartSignal:
+		log.Println("Received restart signal from API.")
+	}
+
 	log.Println("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
