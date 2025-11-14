@@ -25,6 +25,7 @@
             b-icon(icon="search")
       b-form-select(v-model="filters.port", :options="portOptions", class="mr-2", size="sm")
       b-form-select(v-model="filters.operator", :options="operatorOptions", class="mr-2", size="sm")
+      b-form-select(v-model="filters.realCountry", :options="countryOptions", class="mr-2", size="sm")
 
   //- Proxies Table
   b-table(
@@ -39,6 +40,8 @@
     ref="selectableTable"
     @row-selected="onRowSelected"
   )
+    template(#cell(index)="{ index }")
+      span {{ (currentPage - 1) * perPage + index + 1 }}
     template(#cell(password)="data")
       span(v-if="passwordsVisible") {{ data.item.password }}
       span(v-else) ******
@@ -57,10 +60,12 @@
             b-icon(icon="clock-history")
     template(#cell(speed)="data")
       div.d-flex.justify-content-between.align-items-center
-        span {{ data.item.speed }}
+        span {{ formatSpeed(data.item.speed) }}
         router-link(:to="{ path: '/speed_logs', query: { proxy_id: data.item.id } }", target="_blank")
           b-button(size="sm", variant="outline-secondary")
             b-icon(icon="clock-history")
+    template(#cell(upload)="data")
+      span {{ formatSpeed(data.item.upload) }}
     template(#cell(actions)="data")
       router-link(:to="{ path: '/visit_logs', query: { proxy_id: data.item.id } }", target="_blank")
         b-button(size="sm", variant="outline-secondary", class="mr-1")
@@ -107,16 +112,19 @@ export default {
       proxyToEdit: null,
       pendingProxy: null, // Временно храним прокси для обновления списка
       passwordsVisible: false,
-      filters: { port: null, operator: null },
+      filters: { port: null, operator: null, realCountry: null },
       currentPage: 1,
       perPage: 100,
       fields: [
+        { key: 'index', label: '#'},
         { key: 'selected', label: '', selectable: true },
         { key: 'name', label: 'Name', sortable: true },
         { key: 'ip', label: 'Local IP', sortable: true },
         { key: 'port', label: 'Port', sortable: true },
         { key: 'phone', label: 'Phone', sortable: true },
+        { key: 'contacts', label: 'Contacts', sortable: true },
         { key: 'realIP', label: 'Real IP', sortable: true },
+        { key: 'realCountry', label: 'Real Country', sortable: true },
         { key: 'username', label: 'Username' },
         { key: 'password', label: 'Password' },
         { key: 'operator', label: 'Operator', sortable: true },
@@ -143,6 +151,11 @@ export default {
       const options = operators.map(op => ({ value: op, text: op }));
       return [{ value: null, text: 'Operator' }, ...options];
     },
+    countryOptions() {
+      const countries = [...new Set(this.proxies.map(p => p.realCountry).filter(Boolean))];
+      const options = countries.map(country => ({ value: country, text: country }));
+      return [{ value: null, text: 'Country' }, ...options];
+    },
     filteredData() {
       const oneDay = 24 * 60 * 60 * 1000; // 24 часа в миллисекундах
       const now = new Date();
@@ -160,6 +173,7 @@ export default {
             item.operator,
             item.realIP,
             item.username,
+            item.contacts,
           ];
           matched = searchIn.some(field => field && field.toLowerCase().includes(query));
         }
@@ -170,6 +184,10 @@ export default {
 
         if (matched && this.filters.operator) {
           matched = item.operator === this.filters.operator;
+        }
+
+        if (matched && this.filters.realCountry) {
+          matched = item.realCountry === this.filters.realCountry;
         }
 
         return matched;
@@ -194,6 +212,13 @@ export default {
     }
   },
   methods: {
+    formatSpeed(kbps) {
+      if (kbps === null || isNaN(kbps) || kbps === 0) {
+        return '-';
+      }
+      const mbps = kbps / 1000;
+      return mbps.toFixed(2);
+    },
     formatUptime(minutes) {
       if (minutes === null || isNaN(minutes)) {
         return '-';

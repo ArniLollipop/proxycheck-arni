@@ -67,6 +67,9 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 				if p.LastStatus == 2 {
 					p.Uptime = 0
 				} else {
+					if p.LastCheck.IsZero() {
+						p.LastCheck = time.Now().Add(-10 * time.Minute)
+					}
 					uptime := time.Since(p.LastCheck).Minutes()
 					p.Uptime += int(uptime)
 				}

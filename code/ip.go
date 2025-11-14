@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,7 +38,11 @@ func RealIp(stg *Settings, proxy *Proxy, db *gorm.DB, geoIPClient *GeoIPClient) 
 	if err != nil {
 		log.Println("Error reading geoIP data:", err)
 	}
-	if ip.Ip != proxy.Ip {
+	op := orerator.ISP
+	if strings.Contains(strings.ToLower(op), "moldtelecom") {
+		op = "Moldtelecom"
+	}
+	if ip.Ip != proxy.RealIP && proxy.RealIP != "" {
 		proxy.LastIPChange = time.Now()
 		hist := ProxyIPLog{
 			Id:         uuid.NewString(),
@@ -47,8 +52,8 @@ func RealIp(stg *Settings, proxy *Proxy, db *gorm.DB, geoIPClient *GeoIPClient) 
 			OldIp:      proxy.RealIP,
 			Country:    ip.Country,
 			OldCountry: proxy.RealCountry,
-			ISP:        orerator.ISP,
-			OldISP:     proxy.Operator,
+			ISP:        op,
+			OldISP:     op,
 		}
 		if err := hist.Save(db); err != nil {
 			log.Println("Error saving IP log:", err)

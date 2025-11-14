@@ -26,7 +26,9 @@
     template(#cell(timestamp)="{ value }")
       | {{ new Date(value).toLocaleString() }}
     template(#cell(speed)="{ value }")
-      | {{ value }} KB/s
+      | {{ formatSpeed(value) }}
+    template(#cell(upload)="{ value }")
+      | {{ formatSpeed(value) }}
 
   //- Pagination and Info
   .d-flex.justify-content-between.align-items-center.mt-3
@@ -65,7 +67,8 @@ export default {
       fields: [
         { key: 'proxy_name', label: 'Proxy Name', sortable: false }, // Sorting by joined field is complex on backend
         { key: 'timestamp', label: 'Date/Time', sortable: true },
-        { key: 'speed', label: 'Speed', sortable: true }
+        { key: 'speed', label: 'Download (mb/s)', sortable: true },
+        { key: 'upload', label: 'Upload (mb/s)', sortable: true }
       ]
     };
   },
@@ -78,6 +81,13 @@ export default {
     await this.fetchLogs();
   },
   methods: {
+    formatSpeed(kbps) {
+      if (kbps === null || isNaN(kbps) || kbps === 0) {
+        return '-';
+      }
+      const mbps = kbps / 1000;
+      return mbps.toFixed(2);
+    },
     async fetchLogs() {
       this.isBusy = true;
       try {

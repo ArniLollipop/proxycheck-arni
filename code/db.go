@@ -36,6 +36,7 @@ type Proxy struct {
 
 func (s *Proxy) Save(db *gorm.DB) error {
 	err := db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "username"}},
 		UpdateAll: true,
 	}).Create(&s).Error
 	return err
@@ -57,32 +58,52 @@ func (s *Proxy) Get(db *gorm.DB, id string) error {
 
 func (p *Proxy) Parse(proxy string) {
 	proxy = strings.TrimSpace(proxy)
-	proxy = strings.TrimPrefix(proxy, "http://")
-	proxy = strings.TrimPrefix(proxy, "https://")
+	proxy = strings.Replace(proxy, "http://", "", -1)
+	proxy = strings.Replace(proxy, "https://", "", -1)
+	proxy = strings.Replace(proxy, "socks5://", "", -1)
 
 	if strings.Contains(proxy, "@") {
-		// Format: username:password@ip:port
+		// Format: username:password@ip:port or ip:port@username:password
 		parts := strings.SplitN(proxy, "@", 2)
-		userpass := strings.SplitN(parts[0], ":", 2)
-		hostport := strings.SplitN(parts[1], ":", 2)
+		part1 := strings.SplitN(parts[0], ":", 2)
+		part2 := strings.SplitN(parts[1], ":", 2)
 
-		if len(userpass) == 2 {
-			p.Username = userpass[0]
-			p.Password = userpass[1]
-		}
-		if len(hostport) == 2 {
-			p.Ip = hostport[0]
-			p.Port = hostport[1]
+		// Check if the first part is an IP address to distinguish formats
+		if len(part1) == 2 && net.ParseIP(part1[0]) != nil {
+			// Format: ip:port@username:password
+			p.Ip = part1[0]
+			p.Port = part1[1]
+			if len(part2) == 2 {
+				p.Username = part2[0]
+				p.Password = part2[1]
+			}
+		} else if len(part1) == 2 {
+			// Format: username:password@ip:port
+			p.Username = part1[0]
+			p.Password = part1[1]
+			if len(part2) == 2 {
+				p.Ip = part2[0]
+				p.Port = part2[1]
+			}
 		}
 	} else {
 		// Format: ip:port or ip:port:username:password or username:password:ip:port
 		parts := strings.Split(proxy, ":")
 		if len(parts) == 4 {
-			// Assuming username:password:ip:port based on your examples
-			p.Username = parts[0]
-			p.Password = parts[1]
-			p.Ip = parts[2]
-			p.Port = parts[3]
+			// Check if the first part is an IP address to distinguish formats
+			if net.ParseIP(parts[0]) != nil {
+				// Format: ip:port:username:password
+				p.Ip = parts[0]
+				p.Port = parts[1]
+				p.Username = parts[2]
+				p.Password = parts[3]
+			} else {
+				// Format: username:password:ip:port
+				p.Username = parts[0]
+				p.Password = parts[1]
+				p.Ip = parts[2]
+				p.Port = parts[3]
+			}
 		} else if len(parts) == 2 {
 			// Format: ip:port
 			p.Ip = parts[0]

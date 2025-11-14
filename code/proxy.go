@@ -29,25 +29,22 @@ func CheckSpeed(settings *Settings, proxy *Proxy, db *gorm.DB) (float64, float64
 	tg.UploadTest()
 	upload := tg.ULSpeed.Mbps()
 	download := tg.DLSpeed.Mbps()
-	if upload == 0 {
-		upload = 1
-	}
-	if download == 0 {
-		download = 1
-	}
+
+	downloadKb := download * 1000
+	uploadKb := upload * 1000
 
 	hist := ProxySpeedLog{
 		Id:        uuid.NewString(),
 		ProxyId:   proxy.Id,
 		Timestamp: time.Now(),
-		Speed:     int(download),
-		Upload:    int(upload),
+		Speed:     int(downloadKb),
+		Upload:    int(uploadKb),
 	}
 	if err := hist.Save(db); err != nil {
 		log.Println("Error saving speed log:", err)
 	}
 
-	return upload, download, nil
+	return downloadKb, uploadKb, nil
 }
 
 func Ping(settings *Settings, proxy *Proxy) (int, error) {
