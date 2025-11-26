@@ -444,7 +444,7 @@ type ProxyIPLog struct {
 	Id         string    `json:"id"`
 	ProxyId    string    `json:"proxy_id"`
 	Timestamp  time.Time `json:"timestamp"`
-	Ip         string    `json:"ip"`
+	Ip 				 string 	 `json:"ip" gorm:"column:ip"`
 	OldIp      string    `json:"old_ip"`
 	Country    string    `json:"country"`
 	OldCountry string    `json:"old_country"`

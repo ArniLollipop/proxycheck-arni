@@ -290,13 +290,13 @@ export default {
     togglePasswordVisibility() {
       this.passwordsVisible = !this.passwordsVisible;
     },
-    handleProxyCreated(newProxy) {
+    async handleProxyCreated(newProxy) {
       // Временно сохраняем новый прокси, не обновляя основной список
-      this.pendingProxy = newProxy;
+      this.proxies = await getProxies();
     },
-    handleProxyUpdated(updatedProxy) {
+    async handleProxyUpdated(updatedProxy) {
       // Временно сохраняем обновленный прокси
-      this.pendingProxy = updatedProxy;
+      this.proxies = await getProxies();
     },
     onNew() {
       this.newModalShown = true;
@@ -313,9 +313,7 @@ export default {
 
       try {
         const result = await importProxies(file);
-        alert(
-          `Import finished. Imported: ${result.importedCount}, Failed: ${result.failedCount}`
-        );
+        alert(result.message);
         this.proxies = await getProxies(); // Обновляем список
       } catch (error) {
         console.error("Failed to import proxies:", error);
@@ -382,16 +380,20 @@ export default {
           const data = JSON.parse(e.data);
           console.log(data);
 
-          this.verifyRows = this.verifyRows.filter((item) => item.id !== data.id);
-          this.selectedRows = this.selectedRows.filter((item) => item.id !== data.id);
+          this.verifyRows = this.verifyRows.filter(
+            (item) => item.id !== data.id
+          );
+          this.selectedRows = this.selectedRows.filter(
+            (item) => item.id !== data.id
+          );
 
-          this.proxies.forEach((proxy) => {
+          this.proxies = this.proxies.map((proxy) => {
             if (proxy.id === data.id) {
-              proxy = data;
+              return data;
             }
-          });
 
-          console.log(this.verifyRows, e.data);
+            return proxy;
+          });
         });
 
         eventSource.addEventListener("error", () => {

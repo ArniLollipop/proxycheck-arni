@@ -45,7 +45,13 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 				log.Printf("Scheduler: Checking IP for proxy %s (%s)", p.Ip, p.Id)
 
 				// Вызываем существующую функцию для получения реального IP.
-				realIP, realCountry, operator := RealIp(settings, &p, db, geoIPClient)
+				realIP, realCountry, operator, err := RealIp(settings, &p, db, geoIPClient)
+
+				if err != nil {
+					log.Println(err);
+					continue;
+				}
+
 				p.LastCheck = time.Now()
 
 				// Обновляем поля в объекте прокси.
@@ -58,7 +64,6 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 				if err != nil || p.LastStatus == 2 {
 					log.Printf("Scheduler: Ping failed for proxy %s: %v", p.Ip, err)
 					p.Failures++;
-					p.Uptime = 0;
 					p.LastLatency = 0;
 					if p.Failures > 2 {
 						p.LastStatus = 2
@@ -67,13 +72,16 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 					p.LastLatency = latency
 					p.LastStatus = 1
 					p.Failures = 0
-					
+
 					if p.LastCheck.IsZero() {
 						p.LastCheck = time.Now().Add(-10 * time.Minute)
 					}
-					uptime := time.Since(p.LastCheck).Minutes()
-					p.Uptime += int(uptime)
+
+					elapsed := time.Since(p.LastCheck)
+					p.Uptime += int(elapsed.Minutes())
+					p.LastCheck = time.Now()
 				}
+
 
 				// Сохраняем обновленный прокси в базе данных.
 				if err := p.Save(db); err != nil {

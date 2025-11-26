@@ -22,7 +22,7 @@
     responsive="sm"
     @sort-changed="handleSort"
   )
-    template(#cell(ip)="item")
+    template(#cell(ip)="{item}")
       <span :style="item.stack ? 'color:#dc3545' : ''"> {{ item.ip }}</span>
     template(#cell(proxy_name)="{ item }")
       | {{ getProxyName(item.proxy_id) }}

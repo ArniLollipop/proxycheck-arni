@@ -54,16 +54,23 @@ func (h handler) createAndCheckProxy(p *Proxy) error {
 	} else {
 		p.LastStatus = 1 // 1 - success
 	}
-	speed, upload, err := CheckSpeed(h.settings, p, h.db)
 	if err != nil {
 		log.Println(err)
 		p.LastStatus = 2 // 2 - failed
 		p.Failures = 1
 	}
-	p.Speed = int(speed)
-	p.Upload = int(upload)
 	p.LastLatency = latency
-	p.RealIP, p.RealCountry, p.Operator = RealIp(h.settings, p, h.db, h.geoIPClient)
+
+	realIp, realCountry, realOperator, err := RealIp(h.settings, p, h.db, h.geoIPClient)
+
+	if err != nil {
+		log.Println("RealIP:", err);
+		return err;
+	}
+
+	p.RealIP = realIp
+	p.RealCountry = realCountry
+	p.Operator = realOperator
 
 	return p.Save(h.db)
 }
@@ -121,13 +128,7 @@ func (h handler) UpdateProxy(c *gin.Context) {
 	p.Phone = req.Phone
 	p.Name = req.Name
 
-	// Перепроверяем прокси после обновления данных
-	err := h.createAndCheckProxy(&p)
-	if err != nil {
-		log.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+	p.Save(h.db);
 
 	c.JSON(http.StatusOK, gin.H{"data": p})
 }
@@ -156,7 +157,20 @@ func (h handler) Verify(c *gin.Context) {
 	p.Speed = int(speed)
 	p.Upload = int(upload)
 	p.LastLatency = latency
-	p.RealIP, p.RealCountry, p.Operator = RealIp(h.settings, &p, h.db, h.geoIPClient)
+
+	realIp, realCountry, realOperator, err := RealIp(h.settings, &p, h.db, h.geoIPClient)
+
+	if err != nil {
+		log.Println(err);
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return;
+	}
+
+	p.RealIP = realIp
+	p.RealCountry = realCountry
+	p.Operator = realOperator
+
+
 	err = p.Save(h.db)
 	if err != nil {
 		log.Println(err)
@@ -209,7 +223,17 @@ func (h handler) VerifyBatch(c *gin.Context) {
 		speed, upload, _ := CheckSpeed(h.settings, &p, h.db)
 		p.Speed = int(speed)
 		p.Upload = int(upload)
-		p.RealIP, p.RealCountry, p.Operator = RealIp(h.settings, &p, h.db, h.geoIPClient)
+		realIp, realCountry, realOperator, err := RealIp(h.settings, &p, h.db, h.geoIPClient)
+
+		if err != nil {
+			log.Println(err);
+			continue;
+		}
+
+		p.RealIP = realIp
+		p.RealCountry = realCountry
+		p.Operator = realOperator
+
 		p.Save(h.db)
 
 		// PROGRESS
@@ -246,6 +270,16 @@ func (h handler) ImportProxies(c *gin.Context) {
 	scanner := bufio.NewScanner(openedFile)
 	importedCount := 0
 	failedLines := 0
+	skippedDuplicates := 0
+
+	var existingProxies []Proxy
+	h.db.Select("ip, port, username").Find(&existingProxies)
+	
+	existingMap := make(map[string]bool)
+	for _, ep := range existingProxies {
+		key := fmt.Sprintf("%s:%s:%s", ep.Ip, ep.Port, ep.Username)
+		existingMap[key] = true
+	}
 
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -253,8 +287,35 @@ func (h handler) ImportProxies(c *gin.Context) {
 			continue
 		}
 
+		parts := strings.Split(line, "|")
+		proxyLine := parts[0]
+		proxyName := ""
+		proxyContacts := ""
+
+		if len(parts) > 1 {
+			proxyName = strings.TrimSpace(parts[1])
+		}
+		if len(parts) > 2 {
+			proxyContacts = strings.TrimSpace(parts[2])
+		}
+
 		p := Proxy{}
-		p.Parse(line)
+		p.Parse(proxyLine)
+		
+		if proxyName != "" {
+			p.Name = proxyName
+		}
+		if proxyContacts != "" {
+			p.Contacts = proxyContacts
+		}
+
+		key := fmt.Sprintf("%s:%s:%s", p.Ip, p.Port, p.Username)
+		if existingMap[key] {
+			log.Printf("Skipping duplicate proxy %s:%s", p.Ip, p.Port)
+			skippedDuplicates++
+			continue
+		}
+
 		p.Id = uuid.NewString()
 
 		if err := p.Save(h.db); err != nil {
@@ -262,8 +323,12 @@ func (h handler) ImportProxies(c *gin.Context) {
 			failedLines++
 		} else {
 			importedCount++
+			existingMap[key] = true 
+			
+			log.Printf("Imported proxy %s:%s with name: %s, contacts: %s", p.Ip, p.Port, proxyName, proxyContacts)
 		}
 	}
+	
 	if err := scanner.Err(); err != nil {
 		log.Println("Error reading file for import:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading file"})
@@ -271,8 +336,10 @@ func (h handler) ImportProxies(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":       fmt.Sprintf("Import finished. Imported: %d, Failed: %d", importedCount, failedLines),
+		"message": fmt.Sprintf("Import finished. Imported: %d, Skipped: %d, Failed: %d", 
+			importedCount, skippedDuplicates, failedLines),
 		"importedCount": importedCount,
+		"skippedCount":  skippedDuplicates,
 		"failedCount":   failedLines,
 	})
 }
@@ -376,12 +443,6 @@ func (h handler) UpdateSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": h.settings})
 
 	// // Отправляем сигнал на перезапуск приложения
-	// log.Println("Settings updated. Sending restart signal...")
-	// go func() {
-	// 	// Небольшая задержка, чтобы успеть отправить ответ клиенту
-	// 	time.Sleep(1 * time.Second)
-	// 	h.restartSignal <- struct{}{}
-	// }()
 }
 
 func (h handler) GetSpeedLogs(c *gin.Context) {

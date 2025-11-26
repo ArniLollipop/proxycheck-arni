@@ -42,8 +42,8 @@ func SettingsDefault(db *gorm.DB) *Settings {
 			Url:                "https://google.com",
 			Timeout:            5,
 			Repeat:             15,
-			CheckIPInterval:    15,
-			SpeedCheckInterval: 1440,
+			CheckIPInterval:    5,
+			SpeedCheckInterval: 15,
 			Username:           "default_username",
 			Password:           "default_password",
 		}

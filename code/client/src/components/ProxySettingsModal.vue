@@ -27,67 +27,68 @@
 </template>
 
 <script>
-import { createProxy, updateProxy } from '@/api/proxy.js';
+import { createProxy, updateProxy } from "@/api/proxy.js";
 
 export default {
-  name: 'ProxySettingsModal',
+  name: "ProxySettingsModal",
   model: {
-    prop: 'show',
-    event: 'change'
+    prop: "show",
+    event: "change",
   },
   props: {
     show: {
       type: Boolean,
-      default: false
+      default: false,
     },
     title: String,
-    proxy: Object
+    proxy: Object,
   },
-   watch: {
+  watch: {
     proxy(newVal) {
       if (newVal) {
-        this.ip = newVal.ip || ''
-        this.port = newVal.port || ''
-        this.username = newVal.username || ''
-        this.password = newVal.password || ''
-        this.name = newVal.name || ''
-        this.phone = newVal.phone || ''
-        this.contacts = newVal.contacts || ''
-        this.id = newVal.id || ''
+        this.ip = newVal.ip || "";
+        this.port = newVal.port || "";
+        this.username = newVal.username || "";
+        this.password = newVal.password || "";
+        this.name = newVal.name || "";
+        this.phone = newVal.phone || "";
+        this.contacts = newVal.contacts || "";
+        this.id = newVal.id || "";
       } else {
         this.resetForm();
       }
-    }
+    },
   },
   data() {
     return {
-        ip: '',
-        port: '',
-        username: '',
-        password: '',
-        name: '',
-        phone: '',
-        contacts: '',
-        id: ''
-    }
+      ip: "",
+      port: "",
+      username: "",
+      password: "",
+      name: "",
+      phone: "",
+      contacts: "",
+      id: "",
+      isLoading: false,
+    };
   },
   methods: {
     resetForm() {
-      this.ip = ''
-      this.port = ''
-      this.username = ''
-      this.password = ''
-      this.name = ''
-      this.phone = ''
-      this.contacts = ''
+      this.ip = "";
+      this.port = "";
+      this.username = "";
+      this.password = "";
+      this.name = "";
+      this.phone = "";
+      this.contacts = "";
     },
     handleOk(bvModalEvent) {
-      bvModalEvent.preventDefault()
-      this.handleSubmit()
+      bvModalEvent.preventDefault();
+      this.handleSubmit();
     },
     handleCancel() {
       // Просто закрываем модальное окно
-      this.$emit('change', false)
+      this.$emit("change", false);
     },
     async handleSubmit() {
       const proxyData = {
@@ -100,29 +101,32 @@ export default {
         contacts: this.contacts,
       };
 
+      this.isLoading = true;
       try {
         let savedProxy;
         if (this.proxy && this.proxy.id) {
           // Режим редактирования
           savedProxy = await updateProxy(this.proxy.id, proxyData);
-          this.$emit('proxy-updated', savedProxy);
+          this.$emit("proxy-updated", savedProxy);
         } else {
           // Режим создания
           savedProxy = await createProxy(proxyData);
-          this.$emit('proxy-created', savedProxy);
+          this.$emit("proxy-created", savedProxy);
         }
         // Закрываем модальное окно после успешного сохранения
-        this.$emit('change', false);
+        this.$emit("change", false);
       } catch (error) {
-        console.error('Failed to save proxy:', error);
-        alert('Не удалось сохранить прокси. Пожалуйста, проверьте консоль для деталей.');
+        console.error("Failed to save proxy:", error);
+        alert(
+          "Не удалось сохранить прокси. Пожалуйста, проверьте консоль для деталей."
+        );
+      } finally {
+        this.isLoading = false;
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-
-</style>
+<style scoped></style>
