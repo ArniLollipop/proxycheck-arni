@@ -22,6 +22,8 @@
     responsive="sm"
     @sort-changed="handleSort"
   )
+    template(#cell(ip)="item")
+      <span :style="item.stack ? 'color:#dc3545' : ''"> {{ item.ip }}</span>
     template(#cell(proxy_name)="{ item }")
       | {{ getProxyName(item.proxy_id) }}
     template(#cell(timestamp)="{ value }")
@@ -41,32 +43,32 @@
 </template>
 
 <script>
-import { getIpLogs, getProxies } from '@/api/proxy.js';
+import { getIpLogs, getProxies } from "@/api/proxy.js";
 
 export default {
-  name: 'IpLogList',
+  name: "IpLogList",
   data() {
     return {
       logs: [],
       isBusy: false,
       filters: {
         proxy_id: null,
-        start_date: '',
-        end_date: ''
+        start_date: "",
+        end_date: "",
       },
-      proxyOptions: [{ value: null, text: 'All Proxies' }],
+      proxyOptions: [{ value: null, text: "All Proxies" }],
       currentPage: 1,
       perPage: 15,
       totalRows: 0,
-      sortBy: 'timestamp',
+      sortBy: "timestamp",
       sortDesc: true,
       fields: [
-        { key: 'proxy_name', label: 'Proxy Name', sortable: false },
-        { key: 'timestamp', label: 'Date/Time', sortable: true },
-        { key: 'ip', label: 'New IP', sortable: true },
-        { key: 'old_ip', label: 'Old IP', sortable: false },
-        { key: 'isp', label: 'ISP', sortable: true },
-      ]
+        { key: "proxy_name", label: "Proxy Name", sortable: false },
+        { key: "timestamp", label: "Date/Time", sortable: true },
+        { key: "ip", label: "New IP", sortable: true },
+        { key: "old_ip", label: "Old IP", sortable: false },
+        { key: "isp", label: "ISP", sortable: true },
+      ],
     };
   },
   async created() {
@@ -86,12 +88,12 @@ export default {
           page_size: this.perPage,
           sort_field: this.sortBy,
           sort_desc: this.sortDesc,
-          ...this.filters
+          ...this.filters,
         };
 
         // Remove empty filters
-        Object.keys(params).forEach(key => {
-          if (params[key] === null || params[key] === '') {
+        Object.keys(params).forEach((key) => {
+          if (params[key] === null || params[key] === "") {
             delete params[key];
           }
         });
@@ -100,22 +102,24 @@ export default {
         this.logs = data;
         this.totalRows = total;
       } catch (error) {
-        alert('Failed to load IP logs.');
+        alert("Failed to load IP logs.");
       } finally {
         this.isBusy = false;
       }
     },
     getProxyName(proxyId) {
-      const proxy = this.proxyOptions.find(p => p.value === proxyId);
-      return proxy ? proxy.text : 'Unknown';
+      const proxy = this.proxyOptions.find((p) => p.value === proxyId);
+      return proxy ? proxy.text : "Unknown";
     },
     async loadProxies() {
       try {
-        const data= await getProxies();
-        this.proxyOptions.push(...data.map(p => ({ value: p.id, text: p.name })));
-        console.log('Loaded proxies:', data);
+        const data = await getProxies();
+        this.proxyOptions.push(
+          ...data.map((p) => ({ value: p.id, text: p.name }))
+        );
+        console.log("Loaded proxies:", data);
       } catch (error) {
-        console.error('Failed to load proxies for filter:', error);
+        console.error("Failed to load proxies for filter:", error);
       }
     },
     applyFilters() {
@@ -125,8 +129,8 @@ export default {
     resetFilters() {
       this.filters = {
         proxy_id: null,
-        start_date: '',
-        end_date: ''
+        start_date: "",
+        end_date: "",
       };
       this.applyFilters();
     },
@@ -139,8 +143,8 @@ export default {
       this.sortDesc = ctx.sortDesc;
       this.currentPage = 1; // Reset to first page on sort
       this.fetchLogs();
-    }
-  }
+    },
+  },
 };
 </script>
 

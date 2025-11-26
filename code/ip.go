@@ -42,7 +42,21 @@ func RealIp(stg *Settings, proxy *Proxy, db *gorm.DB, geoIPClient *GeoIPClient) 
 	if strings.Contains(strings.ToLower(op), "moldtelecom") {
 		op = "Moldtelecom"
 	}
-	if ip.Ip != proxy.RealIP && proxy.RealIP != "" {
+	
+	// get last timestamp 
+	var pIpLog ProxyIPLog;
+	lastLog, errLastLog := pIpLog.LastByTimestamp(proxy.Id, db)
+
+	stack := false
+	if lastLog != nil {
+			// Если IP не менялся более 12 часов
+			if time.Since(lastLog.Timestamp) > 12*time.Hour && lastLog.Ip == ip.Ip {
+					stack = true
+			}
+	}
+
+
+	if ip.Ip != proxy.RealIP && proxy.RealIP != "" && errLastLog != nil {
 		proxy.LastIPChange = time.Now()
 		hist := ProxyIPLog{
 			Id:         uuid.NewString(),
@@ -50,6 +64,24 @@ func RealIp(stg *Settings, proxy *Proxy, db *gorm.DB, geoIPClient *GeoIPClient) 
 			Timestamp:  time.Now(),
 			Ip:         ip.Ip,
 			OldIp:      proxy.RealIP,
+			Country:    ip.Country,
+			OldCountry: proxy.RealCountry,
+			ISP:        op,
+			OldISP:     op,
+			Stack: 			stack,
+		}
+		if err := hist.Save(db); err != nil {
+			log.Println("Error saving IP log:", err)
+		}
+	} else if lastLog != nil{
+		proxy.LastIPChange = time.Now();
+
+		hist := ProxyIPLog{
+			Id:         uuid.NewString(),
+			ProxyId:    proxy.Id,
+			Timestamp:  time.Now(),
+			Ip:         ip.Ip,
+			OldIp:      lastLog.Ip,
 			Country:    ip.Country,
 			OldCountry: proxy.RealCountry,
 			ISP:        op,

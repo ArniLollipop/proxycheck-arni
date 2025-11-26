@@ -1,4 +1,3 @@
-
 /**
  * Handles the response from the Fetch API.
  * @param {Response} response - The response object from a fetch call.
@@ -8,7 +7,7 @@
 async function handleResponse(response) {
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'An unknown error occurred');
+    throw new Error(data.error || "An unknown error occurred");
   }
   return data.data;
 }
@@ -19,7 +18,7 @@ async function handleResponse(response) {
  * @returns {Promise<Array>} A promise that resolves to an array of proxies.
  */
 export async function getProxies() {
-  const response = await fetch('/api/proxy');
+  const response = await fetch("/api/proxy");
   return handleResponse(response);
 }
 
@@ -30,10 +29,10 @@ export async function getProxies() {
  * @returns {Promise<object>} A promise that resolves to the newly created proxy.
  */
 export async function createProxy(proxyData) {
-  const response = await fetch('/api/proxy', {
-    method: 'POST',
+  const response = await fetch("/api/proxy", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(proxyData),
   });
@@ -49,9 +48,9 @@ export async function createProxy(proxyData) {
  */
 export async function updateProxy(id, proxyData) {
   const response = await fetch(`/api/proxy/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(proxyData),
   });
@@ -66,7 +65,7 @@ export async function updateProxy(id, proxyData) {
  */
 export async function deleteProxy(id) {
   const response = await fetch(`/api/proxy/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
   return handleResponse(response);
 }
@@ -89,8 +88,8 @@ export async function verifyProxy(id) {
  * @returns {Promise<object>} A promise that resolves to a confirmation message.
  */
 export async function verifyBatch(ids) {
-  const response = await fetch(`/api/proxy/verify-batch?ids=${ids.join(',')}`, {
-    method: 'POST',
+  const response = await fetch(`/verify-batch?ids=${ids.join(",")}`, {
+    method: "POST",
   });
   return handleResponse(response);
 }
@@ -103,17 +102,17 @@ export async function verifyBatch(ids) {
  */
 export async function importProxies(file) {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append("file", file);
 
-  const response = await fetch('api/import', {
-    method: 'POST',
+  const response = await fetch("api/import", {
+    method: "POST",
     body: formData,
   });
 
   // Для этого эндпоинта ответ не содержит поля 'data', поэтому обрабатываем его отдельно.
   const result = await response.json();
   if (!response.ok) {
-    throw new Error(result.error || 'Failed to import proxies');
+    throw new Error(result.error || "Failed to import proxies");
   }
   return result;
 }
@@ -125,13 +124,15 @@ export async function importProxies(file) {
  */
 async function handleFileDownload(response, defaultFilename) {
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Failed to download file' }));
+    const errorData = await response
+      .json()
+      .catch(() => ({ error: "Failed to download file" }));
     throw new Error(errorData.error);
   }
 
-  const disposition = response.headers.get('Content-Disposition');
+  const disposition = response.headers.get("Content-Disposition");
   let filename = defaultFilename;
-  if (disposition && disposition.includes('attachment')) {
+  if (disposition && disposition.includes("attachment")) {
     const filenameMatch = /filename="([^"]+)"/.exec(disposition);
     if (filenameMatch && filenameMatch[1]) {
       filename = filenameMatch[1];
@@ -140,8 +141,8 @@ async function handleFileDownload(response, defaultFilename) {
 
   const blob = await response.blob();
   const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.style.display = 'none';
+  const a = document.createElement("a");
+  a.style.display = "none";
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
@@ -156,8 +157,8 @@ async function handleFileDownload(response, defaultFilename) {
  * @returns {Promise<void>} A promise that resolves when the download is initiated.
  */
 export async function exportAllProxies() {
-  const response = await fetch('/api/export/all');
-  await handleFileDownload(response, 'proxies.csv');
+  const response = await fetch("/api/export/all");
+  await handleFileDownload(response, "proxies.csv");
 }
 
 /**
@@ -168,17 +169,17 @@ export async function exportAllProxies() {
  */
 export async function exportSelectedProxies(ids) {
   if (!ids || ids.length === 0) {
-    throw new Error('No proxy IDs provided for export.');
+    throw new Error("No proxy IDs provided for export.");
   }
-  const response = await fetch(`/api/export/selected?ids=${ids.join(',')}`);
-  await handleFileDownload(response, 'selected_proxies.csv');
+  const response = await fetch(`/api/export/selected?ids=${ids.join(",")}`);
+  await handleFileDownload(response, "selected_proxies.csv");
 }
 
 export async function getSpeedLogs(params) {
   try {
-    const url = new URL('/api/speedLogs', window.location.origin);
+    const url = new URL("/api/speedLogs", window.location.origin);
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         if (params[key] !== null && params[key] !== undefined) {
           url.searchParams.append(key, params[key]);
         }
@@ -187,16 +188,16 @@ export async function getSpeedLogs(params) {
     const response = await fetch(url);
     return await response.json();
   } catch (error) {
-    console.error('Failed to fetch speed logs:', error);
+    console.error("Failed to fetch speed logs:", error);
     throw error;
   }
 }
 
 export async function getIpLogs(params) {
   try {
-    const url = new URL('/api/ipLogs', window.location.origin);
+    const url = new URL("/api/ipLogs", window.location.origin);
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         if (params[key] !== null && params[key] !== undefined) {
           url.searchParams.append(key, params[key]);
         }
@@ -205,16 +206,16 @@ export async function getIpLogs(params) {
     const response = await fetch(url);
     return await response.json();
   } catch (error) {
-    console.error('Failed to fetch IP logs:', error);
+    console.error("Failed to fetch IP logs:", error);
     throw error;
   }
 }
 
 export async function getProxyVisits(params) {
   try {
-    const url = new URL('/api/proxyVisits', window.location.origin);
+    const url = new URL("/api/proxyVisits", window.location.origin);
     if (params) {
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         if (params[key] !== null && params[key] !== undefined) {
           url.searchParams.append(key, params[key]);
         }
@@ -223,7 +224,7 @@ export async function getProxyVisits(params) {
     const response = await fetch(url);
     return await response.json();
   } catch (error) {
-    console.error('Failed to fetch proxy visit logs:', error);
+    console.error("Failed to fetch proxy visit logs:", error);
     throw error;
   }
 }

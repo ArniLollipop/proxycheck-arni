@@ -55,18 +55,19 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 
 				// 1. Проверяем Ping
 				latency, err := Ping(settings, &p)
-				if err != nil {
+				if err != nil || p.LastStatus == 2 {
 					log.Printf("Scheduler: Ping failed for proxy %s: %v", p.Ip, err)
-					p.LastStatus = 2
-					p.Failures++
+					p.Failures++;
+					p.Uptime = 0;
+					p.LastLatency = 0;
+					if p.Failures > 2 {
+						p.LastStatus = 2
+					}
 				} else {
 					p.LastLatency = latency
 					p.LastStatus = 1
 					p.Failures = 0
-				}
-				if p.LastStatus == 2 {
-					p.Uptime = 0
-				} else {
+					
 					if p.LastCheck.IsZero() {
 						p.LastCheck = time.Now().Add(-10 * time.Minute)
 					}

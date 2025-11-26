@@ -23,7 +23,6 @@
         template(#append)
           b-input-group-text
             b-icon(icon="search")
-      b-form-select(v-model="filters.port", :options="portOptions", class="mr-2", size="sm")
       b-form-select(v-model="filters.operator", :options="operatorOptions", class="mr-2", size="sm")
       b-form-select(v-model="filters.realCountry", :options="countryOptions", class="mr-2", size="sm")
 
@@ -40,8 +39,11 @@
     ref="selectableTable"
     @row-selected="onRowSelected"
   )
-    template(#cell(index)="{ index }")
-      span {{ (currentPage - 1) * perPage + index + 1 }}
+    template(#cell(index)="data")
+      <div class="d-flex align-items-center gap-1" style=" gap: 4px;">
+        span {{ (currentPage - 1) * perPage + data.index + 1 }}
+        <b-spinner v-if="verifyRows.some((row) => row?.id === data.item.id)" variant="primary" label="Spinning" small />
+      </div>
     template(#cell(password)="data")
       span(v-if="passwordsVisible") {{ data.item.password }}
       span(v-else) ******
@@ -66,6 +68,8 @@
             b-icon(icon="clock-history")
     template(#cell(upload)="data")
       span {{ formatSpeed(data.item.upload) }}
+    template(#cell(lastLatency)="data")
+      span {{ data.item.lastLatency == 0 ? '-' : data.item.lastLatency }}  
     template(#cell(actions)="data")
       router-link(:to="{ path: '/visit_logs', query: { proxy_id: data.item.id } }", target="_blank")
         b-button(size="sm", variant="outline-secondary", class="mr-1")
@@ -94,19 +98,27 @@
 </template>
 
 <script>
-import ProxySettingsModal from '@/components/ProxySettingsModal.vue';
-import { getProxies,verifyProxy, verifyBatch, deleteProxy, importProxies, exportAllProxies, exportSelectedProxies } from '@/api/proxy.js';
+import ProxySettingsModal from "@/components/ProxySettingsModal.vue";
+import {
+  getProxies,
+  verifyProxy,
+  deleteProxy,
+  importProxies,
+  exportAllProxies,
+  exportSelectedProxies,
+} from "@/api/proxy.js";
 
 export default {
-  name: 'ProxyList',
-  components:{
-    ProxySettingsModal
+  name: "ProxyList",
+  components: {
+    ProxySettingsModal,
   },
   data() {
     return {
-      search: '',
+      search: "",
       proxies: [], // Для хранения оригинальных данных с API
       selectedRows: [],
+      verifyRows: [],
       newModalShown: false,
       editModalShown: false,
       proxyToEdit: null,
@@ -116,51 +128,76 @@ export default {
       currentPage: 1,
       perPage: 100,
       fields: [
-        { key: 'index', label: '#'},
-        { key: 'selected', label: '', selectable: true },
-        { key: 'name', label: 'Name', sortable: true },
-        { key: 'ip', label: 'Local IP', sortable: true },
-        { key: 'port', label: 'Port', sortable: true },
-        { key: 'phone', label: 'Phone', sortable: true },
-        { key: 'contacts', label: 'Contacts', sortable: true },
-        { key: 'realIP', label: 'Real IP', sortable: true },
-        { key: 'realCountry', label: 'Real Country', sortable: true },
-        { key: 'username', label: 'Username' },
-        { key: 'password', label: 'Password' },
-        { key: 'operator', label: 'Operator', sortable: true },
-        { key: 'lastIPChange', label: 'Last IP Change', sortable: true },
-        { key: 'uptime', label: 'Uptime', sortable: true },
-        { key: 'lastStatus', label: 'Status', sortable: true },
-        { key: 'lastLatency', label: 'Latency (ms)', sortable: true },
-        { key: 'speed', label: 'Download (mb/s)', sortable: true },
-        { key: 'upload', label: 'Upload (mb/s)', sortable: true },
-        { key: 'failures', label: 'Failures', sortable: true },
-        { key: 'actions', label: 'Actions' }
+        { key: "index", label: "#" },
+        { key: "selected", label: "", selectable: true },
+        { key: "name", label: "Name", sortable: true },
+        { key: "ip", label: "Local IP", sortable: true },
+        { key: "port", label: "Port", sortable: true },
+        { key: "phone", label: "Phone", sortable: true },
+        { key: "contacts", label: "Contacts", sortable: true },
+        { key: "realIP", label: "Real IP", sortable: true },
+        { key: "realCountry", label: "Real Country", sortable: true },
+        { key: "username", label: "Username" },
+        { key: "password", label: "Password" },
+        { key: "operator", label: "Operator", sortable: true },
+        { key: "lastIPChange", label: "Last IP Change", sortable: true },
+        { key: "uptime", label: "Uptime", sortable: true },
+        { key: "lastStatus", label: "Status", sortable: true },
+        { key: "lastLatency", label: "Latency (ms)", sortable: true },
+        { key: "speed", label: "Download (mb/s)", sortable: true },
+        { key: "upload", label: "Upload (mb/s)", sortable: true },
+        { key: "failures", label: "Failures", sortable: true },
+        { key: "actions", label: "Actions" },
       ],
-    }
+    };
   },
   computed: {
     // Динамически создаем опции для фильтров на основе загруженных данных
     portOptions() {
-      const ports = [...new Set(this.proxies.map(p => p.port))];
-      const options = ports.map(port => ({ value: port, text: port }));
-      return [{ value: null, text: 'Port' }, ...options];
+      const ports = [...new Set(this.proxies.map((p) => p.port))];
+      const options = ports.map((port) => ({ value: port, text: port }));
+      return [{ value: null, text: "Port" }, ...options];
     },
     operatorOptions() {
-      const operators = [...new Set(this.proxies.map(p => p.operator).filter(Boolean))];
-      const options = operators.map(op => ({ value: op, text: op }));
-      return [{ value: null, text: 'Operator' }, ...options];
+      const operators = [
+        ...new Set(this.proxies.map((p) => p.operator).filter(Boolean)),
+      ];
+      let options = operators.map((op) => ({ value: op, text: op }));
+
+      // попросили все версии moldtelecom сделать как один
+      const copiedFilter = "moldtelecom";
+      let counter = 0;
+      options = options.filter((opt) => {
+        if (opt.text.toLowerCase().includes(copiedFilter) && counter == 0) {
+          counter++;
+          return true;
+        } else if (
+          opt.text.toLowerCase().includes(copiedFilter) &&
+          counter > 0
+        ) {
+          return false;
+        } else {
+          return true;
+        }
+      });
+
+      return [{ value: null, text: "Operator" }, ...options];
     },
     countryOptions() {
-      const countries = [...new Set(this.proxies.map(p => p.realCountry).filter(Boolean))];
-      const options = countries.map(country => ({ value: country, text: country }));
-      return [{ value: null, text: 'Country' }, ...options];
+      const countries = [
+        ...new Set(this.proxies.map((p) => p.realCountry).filter(Boolean)),
+      ];
+      const options = countries.map((country) => ({
+        value: country,
+        text: country,
+      }));
+      return [{ value: null, text: "Country" }, ...options];
     },
     filteredData() {
       const oneDay = 24 * 60 * 60 * 1000; // 24 часа в миллисекундах
       const now = new Date();
 
-      const filtered = this.proxies.filter(item => {
+      const filtered = this.proxies.filter((item) => {
         let matched = true;
         const query = this.search.toLowerCase();
 
@@ -175,7 +212,9 @@ export default {
             item.username,
             item.contacts,
           ];
-          matched = searchIn.some(field => field && field.toLowerCase().includes(query));
+          matched = searchIn.some(
+            (field) => field && field.toLowerCase().includes(query)
+          );
         }
 
         if (matched && this.filters.port) {
@@ -183,7 +222,8 @@ export default {
         }
 
         if (matched && this.filters.operator) {
-          matched = item.operator === this.filters.operator;
+          const lowered = this.filters.operator.toLowerCase();
+          matched = item.operator.toLowerCase().includes(lowered);
         }
 
         if (matched && this.filters.realCountry) {
@@ -193,35 +233,37 @@ export default {
         return matched;
       });
 
-      return filtered.map(item => {
+      return filtered.map((item) => {
         const newItem = { ...item };
         if (newItem.lastIPChange) {
           const lastChangeDate = new Date(newItem.lastIPChange);
           // Проверяем, прошло ли больше 24 часов
           if (now - lastChangeDate > oneDay) {
-            newItem._rowVariant = 'danger'; // Используем 'danger' для красного цвета
+            newItem._rowVariant = "danger"; // Используем 'danger' для красного цвета
           }
           // Рассчитываем uptime в минутах
-          const uptimeInMinutes = Math.floor((now - lastChangeDate) / (1000 * 60));
+          const uptimeInMinutes = Math.floor(
+            (now - lastChangeDate) / (1000 * 60)
+          );
           newItem.uptime = uptimeInMinutes;
         } else {
           newItem.uptime = null;
         }
         return newItem;
       });
-    }
+    },
   },
   methods: {
     formatSpeed(kbps) {
       if (kbps === null || isNaN(kbps) || kbps === 0) {
-        return '-';
+        return "-";
       }
       const mbps = kbps / 1000;
       return mbps.toFixed(2);
     },
     formatUptime(minutes) {
       if (minutes === null || isNaN(minutes)) {
-        return '-';
+        return "-";
       }
       if (minutes <= 6) {
         return `${minutes}m`;
@@ -231,7 +273,7 @@ export default {
       const hours = Math.floor((minutes % (60 * 24)) / 60);
       const mins = minutes % 60;
 
-      let result = '';
+      let result = "";
       if (days > 0) {
         result += `${days}d `;
       }
@@ -239,7 +281,7 @@ export default {
         result += `${hours}h `;
       }
       // Показываем минуты, если нет других единиц или они не равны нулю
-      if (mins > 0 || result === '') {
+      if (mins > 0 || result === "") {
         result += `${mins}m`;
       }
 
@@ -256,7 +298,9 @@ export default {
       // Временно сохраняем обновленный прокси
       this.pendingProxy = updatedProxy;
     },
-    onNew() { this.newModalShown = true } ,
+    onNew() {
+      this.newModalShown = true;
+    },
     onImport() {
       // Открываем диалог выбора файла
       this.$refs.fileInput.click();
@@ -269,61 +313,124 @@ export default {
 
       try {
         const result = await importProxies(file);
-        alert(`Import finished. Imported: ${result.importedCount}, Failed: ${result.failedCount}`);
+        alert(
+          `Import finished. Imported: ${result.importedCount}, Failed: ${result.failedCount}`
+        );
         this.proxies = await getProxies(); // Обновляем список
       } catch (error) {
-        console.error('Failed to import proxies:', error);
-        alert('Failed to import proxies.');
+        console.error("Failed to import proxies:", error);
+        alert("Failed to import proxies.");
       } finally {
         // Сбрасываем значение инпута, чтобы можно было выбрать тот же файл снова
-        event.target.value = '';
+        event.target.value = "";
       }
     },
     async onExport() {
       try {
         await exportAllProxies();
       } catch (error) {
-        console.error('Failed to export all proxies:', error);
-        alert('Failed to export proxies.');
+        console.error("Failed to export all proxies:", error);
+        alert("Failed to export proxies.");
       }
     },
     async onExportSelected() {
-      const ids = this.selectedRows.map(item => item.id);
+      const ids = this.selectedRows.map((item) => item.id);
       if (ids.length === 0) {
-        alert('No proxies selected for export.');
+        alert("No proxies selected for export.");
         return;
       }
       try {
         await exportSelectedProxies(ids);
       } catch (error) {
-        console.error('Failed to export selected proxies:', error);
-        alert('Failed to export selected proxies.');
+        console.error("Failed to export selected proxies:", error);
+        alert("Failed to export selected proxies.");
       }
     },
     async onVerifySelected() {
-      const ids = this.selectedRows.map(item => item.id);
+      const ids = this.selectedRows.map((item) => item.id);
+
+      this.verifyRows = this.selectedRows.map((item) => {
+        return {
+          ...item,
+          state: "queue",
+        };
+      });
+
       if (ids.length === 0) {
-        alert('No proxies selected');
+        alert("No proxies selected");
         return;
       }
       try {
-        await verifyBatch(ids);
-        alert('Proxies verified successfully');
-        this.proxies = await getProxies();
-        this.$refs.selectableTable.clearSelected();
+        const eventSource = new EventSource(
+          `/api/proxy/verify-batch?ids=${ids}`
+        );
+
+        eventSource.addEventListener("start", (e) => {
+          const data = JSON.parse(e.data);
+          console.log(data);
+
+          this.verifyRows.forEach((item) => {
+            if (item.id === data.id) {
+              item.state = "loading";
+            }
+          });
+
+          console.log(`Starting verification: ${data.current}/${data.total}`);
+        });
+
+        eventSource.addEventListener("progress", (e) => {
+          const data = JSON.parse(e.data);
+          console.log(data);
+
+          this.verifyRows = this.verifyRows.filter((item) => item.id !== data.id);
+          this.selectedRows = this.selectedRows.filter((item) => item.id !== data.id);
+
+          this.proxies.forEach((proxy) => {
+            if (proxy.id === data.id) {
+              proxy = data;
+            }
+          });
+
+          console.log(this.verifyRows, e.data);
+        });
+
+        eventSource.addEventListener("error", () => {
+          console.error(`Error verifying:`);
+        });
+
+        eventSource.addEventListener("complete", async (e) => {
+          const data = JSON.parse(e.data);
+          console.log(data);
+          console.log("Verification complete!", data);
+          eventSource.close();
+
+          // Обновляем список прокси
+          // refreshProxyList();
+          this.$refs.selectableTable.clearSelected();
+        });
+
+        // Обработка ошибок соединения
+        eventSource.onerror = (error) => {
+          console.error("EventSource failed:", error);
+          eventSource.close();
+        };
       } catch (error) {
-        console.error('Failed to verify selected proxies:', error);
-        alert('Failed to verify selected proxies.');
+        console.error("Failed to verify selected proxies:", error);
+        alert("Failed to verify selected proxies.");
       }
     },
     async onDeleteSelected() {
-      const ids = this.selectedRows.map(item => item.id);
+      const ids = this.selectedRows.map((item) => item.id);
       if (ids.length === 0) {
-        alert('No proxies selected');
+        alert("No proxies selected");
         return;
       }
 
-      if (!confirm(`Are you sure you want to delete ${ids.length} selected proxies?`)) {
+      if (
+        !confirm(
+          `Are you sure you want to delete ${ids.length} selected proxies?`
+        )
+      ) {
         return;
       }
 
@@ -332,8 +439,10 @@ export default {
           await deleteProxy(id);
         }
       } catch (error) {
-        console.error('An error occurred during batch deletion:', error);
-        alert('An error occurred while deleting proxies. The operation was interrupted.');
+        console.error("An error occurred during batch deletion:", error);
+        alert(
+          "An error occurred while deleting proxies. The operation was interrupted."
+        );
       } finally {
         this.proxies = await getProxies();
         this.$refs.selectableTable.clearSelected();
@@ -349,12 +458,19 @@ export default {
       }
     },
     onChange(item) {
-      this.proxyToEdit = item;
+      console.log(item, "item");
+      this.proxyToEdit = { ...item };
       this.editModalShown = true;
     },
-    onReset(item) { alert('Reset: ' + item.ipPort) },
+    onReset(item) {
+      alert("Reset: " + item.ipPort);
+    },
     async onDelete(item) {
-      if (!confirm(`Are you sure you want to delete proxy ${item.ip}:${item.port}?`)) {
+      if (
+        !confirm(
+          `Are you sure you want to delete proxy ${item.ip}:${item.port}?`
+        )
+      ) {
         return;
       }
       try {
@@ -371,7 +487,9 @@ export default {
     onModalHidden() {
       this.$nextTick(() => {
         if (this.pendingProxy) {
-          const index = this.proxies.findIndex(p => p.id === this.pendingProxy.id);
+          const index = this.proxies.findIndex(
+            (p) => p.id === this.pendingProxy.id
+          );
           if (index !== -1) {
             // Редактирование
             this.$set(this.proxies, index, this.pendingProxy);
@@ -380,18 +498,18 @@ export default {
             this.proxies.unshift(this.pendingProxy);
           }
         }
-        
+
         // Сбрасываем все временные состояния
         this.proxyToEdit = null;
         this.pendingProxy = null;
       });
-    }
+    },
   },
-   async created() {
+  async created() {
     const proxies = await getProxies();
     this.proxies = proxies;
-  }
-}
+  },
+};
 </script>
 
 <style scoped>

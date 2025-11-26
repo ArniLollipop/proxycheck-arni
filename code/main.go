@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -17,7 +18,18 @@ import (
 	"gorm.io/gorm"
 )
 
+func NoBufferMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if strings.HasSuffix(c.Request.URL.Path, "/verify-batch") {
+			c.Writer.Header().Set("X-Accel-Buffering", "no")
+		}
+		c.Next()
+	}
+}
+
 func main() {
+	fmt.Println("started arni")
+
 	// Initialize a single database
 	db, err := gorm.Open(sqlite.Open("database/proxy.db"), &gorm.Config{})
 	if err != nil {
@@ -39,6 +51,8 @@ func main() {
 
 	// Initialize Gin router
 	router := gin.Default()
+	router.Use(NoBufferMiddleware())
+
 
 	// Serve frontend static files
 	router.Use(gin.BasicAuth(gin.Accounts{settings.Username: settings.Password}), static.Serve("/", static.LocalFile("./client/dist", true)))
@@ -62,15 +76,23 @@ func main() {
 	}
 
 	// API routes for proxies
+	sseRoutes := router.Group("api/proxy")
+	sseRoutes.Use(func(c *gin.Context) {
+			// Отключаем логирование и другие middleware для SSE
+			c.Next()
+	})
+	sseRoutes.GET("verify-batch", h.VerifyBatch)
+
 	proxyRoutes := router.Group("api/proxy")
-	{
+	{ 
 		proxyRoutes.GET("", h.ProxyList)
-		proxyRoutes.PUT(":id", h.UpdateProxy)
-		proxyRoutes.POST("", h.CreateProxy)
-		proxyRoutes.GET(":id/verify", h.Verify)
-		proxyRoutes.DELETE(":id", h.Delete)
-		proxyRoutes.POST("verify-batch", h.VerifyBatch)
+    proxyRoutes.PUT(":id", h.UpdateProxy)
+    proxyRoutes.POST("", h.CreateProxy)
+    proxyRoutes.GET(":id/verify", h.Verify)
+    proxyRoutes.DELETE(":id", h.Delete)
 	}
+
+
 
 	// API routes for settings
 

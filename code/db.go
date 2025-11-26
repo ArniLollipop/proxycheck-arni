@@ -32,15 +32,18 @@ type Proxy struct {
 	Name         string    `json:"name"`
 	Uptime       int       `json:"uptime"`
 	LastCheck    time.Time `json:"last_check"`
+
+	Stack        bool      `json:"stack"`
 }
 
+
 func (s *Proxy) Save(db *gorm.DB) error {
-	err := db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "username"}},
+	return db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}},
 		UpdateAll: true,
-	}).Create(&s).Error
-	return err
+	}).Create(s).Error
 }
+
 func (s *Proxy) List(db *gorm.DB) ([]Proxy, error) {
 	proxy := []Proxy{}
 	err := db.Model(s).Find(&proxy).Error
@@ -447,6 +450,7 @@ type ProxyIPLog struct {
 	OldCountry string    `json:"old_country"`
 	ISP        string    `json:"isp"`
 	OldISP     string    `json:"old_isp"`
+	Stack      bool      `json:"stack"` // новое поле
 }
 
 func (i *ProxyIPLog) Save(db *gorm.DB) error {
@@ -563,4 +567,20 @@ func (p *ProxyIPLog) List(filters ProxyIPLogFilters, db *gorm.DB) ([]ProxyIPLog,
 	var count int64
 	err = db.Model(p).Scopes(p.buildConditionsCount(filters)...).Count(&count).Error
 	return logs, count, err
+}
+
+func (p *ProxyIPLog) LastByTimestamp(proxyId string, db *gorm.DB) (*ProxyIPLog, error) {
+	var log ProxyIPLog
+
+	err := db.Model(p).
+		Where("proxy_id = ?", proxyId).
+		Order("timestamp DESC").
+		Limit(1).
+		First(&log).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &log, nil
 }

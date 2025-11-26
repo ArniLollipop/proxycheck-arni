@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -14,6 +15,9 @@ import (
 // Для точного измерения скорости рекомендуется использовать URL-адрес
 // для `settings.Url`, который отдает файл размером не менее нескольких мегабайт.
 func CheckSpeed(settings *Settings, proxy *Proxy, db *gorm.DB) (float64, float64, error) {
+
+	fmt.Println("checkSpeed")
+
 	client, err := newProxyClient(proxy, settings)
 	if err != nil {
 		return 0, 0, err
@@ -33,6 +37,10 @@ func CheckSpeed(settings *Settings, proxy *Proxy, db *gorm.DB) (float64, float64
 	downloadKb := download * 1000
 	uploadKb := upload * 1000
 
+
+	proxy.Speed = int(downloadKb);
+	proxy.Upload = int(uploadKb);
+	
 	hist := ProxySpeedLog{
 		Id:        uuid.NewString(),
 		ProxyId:   proxy.Id,
@@ -43,6 +51,12 @@ func CheckSpeed(settings *Settings, proxy *Proxy, db *gorm.DB) (float64, float64
 	if err := hist.Save(db); err != nil {
 		log.Println("Error saving speed log:", err)
 	}
+
+	if err := proxy.Save(db); err != nil {
+		log.Println("Error saving proxy's speed log:", err)
+	}
+
+	fmt.Println("Saved speed log:", tg.URL)
 
 	return downloadKb, uploadKb, nil
 }

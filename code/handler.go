@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -166,41 +167,66 @@ func (h handler) Verify(c *gin.Context) {
 }
 
 func (h handler) VerifyBatch(c *gin.Context) {
-	ids := c.Query("ids")
-	idsArray := strings.Split(ids, ",")
-	for _, id := range idsArray {
+	ids := strings.Split(c.Query("ids"), ",")
+	if len(ids) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ids parameter is required"})
+		return
+	}
+
+	w := c.Writer
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+	
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		c.String(http.StatusInternalServerError, "Streaming not supported")
+		return
+	}
+	
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(": ping\n\n"))
+	flusher.Flush()
+
+	for i, id := range ids {
+		id = strings.TrimSpace(id)
+
 		var p Proxy
-		err := p.Get(h.db, id)
-		if err != nil {
-			log.Println(err)
+		if err := p.Get(h.db, id); err != nil {
 			continue
 		}
-		latency, err := Ping(h.settings, &p)
-		if err != nil {
-			log.Println(err)
-			p.Failures += 1
-			p.LastStatus = 2
-		} else {
-			p.LastLatency = latency
-			p.LastStatus = 1
-			p.Failures = 0
-		}
 
-		speed, upload, err := CheckSpeed(h.settings, &p, h.db)
-		if err != nil {
-			log.Println(err)
-		}
+		// START
+		startJSON, _ := json.Marshal(gin.H{"id": id, "current": i + 1, "total": len(ids)})
+		w.Write([]byte(fmt.Sprintf("event:start\ndata:%s\n\n", startJSON)))
+		flusher.Flush()
+		log.Printf("✅ START for ID: %s", id)
+
+		// Ваши проверки...
+		latency, _ := Ping(h.settings, &p)
+		p.LastLatency = latency
+		speed, upload, _ := CheckSpeed(h.settings, &p, h.db)
 		p.Speed = int(speed)
 		p.Upload = int(upload)
-
 		p.RealIP, p.RealCountry, p.Operator = RealIp(h.settings, &p, h.db, h.geoIPClient)
-		err = p.Save(h.db)
+		p.Save(h.db)
+
+		// PROGRESS
+		progressJSON, err := json.Marshal(p)
 		if err != nil {
-			log.Println(err)
-			continue
+			log.Println("failed to marshal proxy:", err)
+		} else {
+			w.Write([]byte(fmt.Sprintf("event:progress\ndata:%s\n\n", progressJSON)))
+			flusher.Flush()
 		}
+		log.Printf("✅ PROGRESS for ID: %s", id)
 	}
-	c.JSON(http.StatusOK, gin.H{"data": "Proxies verified"})
+
+	// COMPLETE
+	completeJSON, _ := json.Marshal(gin.H{"message": "done", "total": len(ids)})
+	w.Write([]byte(fmt.Sprintf("event:complete\ndata:%s\n\n", completeJSON)))
+	flusher.Flush()
 }
 
 func (h handler) ImportProxies(c *gin.Context) {
@@ -349,13 +375,13 @@ func (h handler) UpdateSettings(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": h.settings})
 
-	// Отправляем сигнал на перезапуск приложения
-	log.Println("Settings updated. Sending restart signal...")
-	go func() {
-		// Небольшая задержка, чтобы успеть отправить ответ клиенту
-		time.Sleep(1 * time.Second)
-		h.restartSignal <- struct{}{}
-	}()
+	// // Отправляем сигнал на перезапуск приложения
+	// log.Println("Settings updated. Sending restart signal...")
+	// go func() {
+	// 	// Небольшая задержка, чтобы успеть отправить ответ клиенту
+	// 	time.Sleep(1 * time.Second)
+	// 	h.restartSignal <- struct{}{}
+	// }()
 }
 
 func (h handler) GetSpeedLogs(c *gin.Context) {
