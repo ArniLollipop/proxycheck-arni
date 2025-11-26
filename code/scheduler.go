@@ -8,6 +8,73 @@ import (
 	"gorm.io/gorm"
 )
 
+func RunSingleIPCheck(db *gorm.DB, settings *Settings, geoIP *GeoIPClient) {
+	var proxies []Proxy
+	if err := db.Find(&proxies).Error; err != nil {
+		log.Println("Error fetching proxies:", err)
+		return
+	}
+	IPCheckIterator(proxies, settings, db, geoIP)
+}
+
+func RunSingleHealthCheck(db *gorm.DB, settings *Settings, geoIP *GeoIPClient) {
+	var proxies []Proxy
+	if err := db.Find(&proxies).Error; err != nil {
+		log.Println("Error fetching proxies:", err)
+		return
+	}
+	HealthCheckIterator(proxies, settings, db)
+}
+
+
+func IPCheckIterator(proxies []Proxy, settings *Settings, db *gorm.DB, geoIPClient *GeoIPClient) {
+	for i := range proxies {
+		p := &proxies[i]  
+		// Важно: используем &proxies[i], чтобы работать с оригинальным элементом слайса, а не с его копией.
+
+		log.Printf("Scheduler: Checking IP for proxy %s (%s)", p.Ip, p.Id)
+
+		// Вызываем существующую функцию для получения реального IP.
+		realIP, realCountry, operator, _ := RealIp(settings, p, db, geoIPClient)
+
+		p.LastCheck = time.Now()
+
+		// Обновляем поля в объекте прокси.
+		p.RealIP = realIP
+		p.RealCountry = realCountry
+		p.Operator = operator
+
+		// 1. Проверяем Ping
+		latency, err := Ping(settings, p)
+		if err != nil || p.LastStatus == 2 {
+			log.Printf("Scheduler: Ping failed for proxy %s: %v", p.Ip, err)
+			p.Failures++;
+			p.LastLatency = 0;
+			if p.Failures > 2 {
+				p.LastStatus = 2
+			}
+		} else {
+			p.LastLatency = latency
+			p.LastStatus = 1
+			p.Failures = 0
+
+			if p.LastCheck.IsZero() {
+				p.LastCheck = time.Now().Add(-10 * time.Minute)
+			}
+
+			elapsed := time.Since(p.LastCheck)
+			p.Uptime += int(elapsed.Minutes())
+			p.LastCheck = time.Now()
+		}
+
+
+		// Сохраняем обновленный прокси в базе данных.
+		if err := p.Save(db); err != nil {
+			log.Printf("Scheduler: Error saving updated proxy %s: %v", p.Ip, err)
+		}
+	}
+}
+
 // StartIPCheckScheduler запускает периодическую проверку реальных IP-адресов для всех прокси.
 // Он использует WaitGroup для сигнализации о завершении и quit-канал для грациозной остановки.
 func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB, settings *Settings, geoIPClient *GeoIPClient) {
@@ -39,56 +106,40 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 			log.Printf("Scheduler: Found %d proxies to check.", len(proxies))
 
 			// Проходим по каждому прокси.
-			for i := range proxies {
-    		p := &proxies[i]  
-				// Важно: используем &proxies[i], чтобы работать с оригинальным элементом слайса, а не с его копией.
-
-				log.Printf("Scheduler: Checking IP for proxy %s (%s)", p.Ip, p.Id)
-
-				// Вызываем существующую функцию для получения реального IP.
-				realIP, realCountry, operator, _ := RealIp(settings, p, db, geoIPClient)
-
-				p.LastCheck = time.Now()
-
-				// Обновляем поля в объекте прокси.
-				p.RealIP = realIP
-				p.RealCountry = realCountry
-				p.Operator = operator
-
-				// 1. Проверяем Ping
-				latency, err := Ping(settings, p)
-				if err != nil || p.LastStatus == 2 {
-					log.Printf("Scheduler: Ping failed for proxy %s: %v", p.Ip, err)
-					p.Failures++;
-					p.LastLatency = 0;
-					if p.Failures > 2 {
-						p.LastStatus = 2
-					}
-				} else {
-					p.LastLatency = latency
-					p.LastStatus = 1
-					p.Failures = 0
-
-					if p.LastCheck.IsZero() {
-						p.LastCheck = time.Now().Add(-10 * time.Minute)
-					}
-
-					elapsed := time.Since(p.LastCheck)
-					p.Uptime += int(elapsed.Minutes())
-					p.LastCheck = time.Now()
-				}
-
-
-				// Сохраняем обновленный прокси в базе данных.
-				if err := p.Save(db); err != nil {
-					log.Printf("Scheduler: Error saving updated proxy %s: %v", p.Ip, err)
-				}
-			}
+			IPCheckIterator(proxies, settings, db, geoIPClient);
+			
 			log.Println("Scheduler: Finished scheduled IP check.")
 
 		case <-quit:
 			log.Println("Scheduler: Shutting down IP check scheduler.")
 			return
+		}
+	}
+}
+
+func HealthCheckIterator(proxies []Proxy, settings *Settings, db *gorm.DB) {
+	for i := range proxies {
+		p := &proxies[i]  
+		log.Printf("Scheduler: Health checking proxy %s (%s)-%s", p.Ip, p.Id, p.Name)
+
+		// 2. Проверяем Speed
+		speed, upload, err := CheckSpeed(settings, p, db)
+		if err != nil {
+			log.Printf("Scheduler: Speed check failed for proxy %s-%s: %v", p.Name, p.Ip, err)
+		} else {
+			p.Speed = int(speed)
+			if p.Speed == 0 {
+				p.Speed = 1
+			}
+			p.Upload = int(upload)
+			if p.Upload == 0 {
+				p.Upload = 1
+			}
+		}
+
+		// Сохраняем обновленные данные
+		if err := p.Save(db); err != nil {
+			log.Printf("Scheduler: Error saving updated proxy %s: %v", p.Ip, err)
 		}
 	}
 }
@@ -123,29 +174,7 @@ func StartHealthCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gor
 
 			log.Printf("Scheduler: Found %d proxies for health check.", len(proxies))
 
-			for _, p := range proxies {
-				log.Printf("Scheduler: Health checking proxy %s (%s)", p.Ip, p.Id)
-
-				// 2. Проверяем Speed
-				speed, upload, err := CheckSpeed(settings, &p, db)
-				if err != nil {
-					log.Printf("Scheduler: Speed check failed for proxy %s: %v", p.Ip, err)
-				} else {
-					p.Speed = int(speed)
-					if p.Speed == 0 {
-						p.Speed = 1
-					}
-					p.Upload = int(upload)
-					if p.Upload == 0 {
-						p.Upload = 1
-					}
-				}
-
-				// Сохраняем обновленные данные
-				if err := p.Save(db); err != nil {
-					log.Printf("Scheduler: Error saving updated proxy %s: %v", p.Ip, err)
-				}
-			}
+			HealthCheckIterator(proxies, settings, db);
 			log.Println("Scheduler: Finished scheduled health check.")
 
 		case <-quit:

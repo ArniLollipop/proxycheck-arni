@@ -14,6 +14,9 @@ import (
 func newProxyClient(proxy *Proxy, stg *Settings) (*http.Client, error) {
 	// Формируем URL прокси с данными для аутентификации, если они есть.
 	proxyStr := fmt.Sprintf("http://%s:%s", proxy.Ip, proxy.Port)
+
+	fmt.Println("NewProxyClient: ", proxyStr)
+
 	if proxy.Username != "" {
 		proxyStr = fmt.Sprintf("http://%s:%s@%s:%s", proxy.Username, proxy.Password, proxy.Ip, proxy.Port)
 	}

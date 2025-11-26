@@ -61,12 +61,7 @@ func (h handler) createAndCheckProxy(p *Proxy) error {
 	}
 	p.LastLatency = latency
 
-	realIp, realCountry, realOperator, err := RealIp(h.settings, p, h.db, h.geoIPClient)
-
-	if err != nil {
-		log.Println("RealIP:", err);
-		return err;
-	}
+	realIp, realCountry, realOperator, _ := RealIp(h.settings, p, h.db, h.geoIPClient)
 
 	p.RealIP = realIp
 	p.RealCountry = realCountry
@@ -253,17 +248,17 @@ func (h handler) VerifyBatch(c *gin.Context) {
 	flusher.Flush()
 }
 
-func (h handler) ImportProxies(c *gin.Context) {
+func (h handler) ImportProxies(c *gin.Context) (message string){
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File is required"})
-		return
+		return ""
 	}
 
 	openedFile, err := file.Open()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
-		return
+		return ""
 	}
 	defer openedFile.Close()
 
@@ -335,13 +330,17 @@ func (h handler) ImportProxies(c *gin.Context) {
 		return
 	}
 
+	msg := fmt.Sprintf("Import finished. Imported: %d, Skipped: %d, Failed: %d", 
+			importedCount, skippedDuplicates, failedLines)
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("Import finished. Imported: %d, Skipped: %d, Failed: %d", 
-			importedCount, skippedDuplicates, failedLines),
+		"message": msg,
 		"importedCount": importedCount,
 		"skippedCount":  skippedDuplicates,
 		"failedCount":   failedLines,
 	})
+
+	return msg
 }
 
 func (h handler) Delete(c *gin.Context) {

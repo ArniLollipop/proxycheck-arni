@@ -22,13 +22,13 @@ func RealIp(stg *Settings, proxy *Proxy, db *gorm.DB, geoIPClient *GeoIPClient) 
 	client, err := newProxyClient(proxy, stg)
 	if err != nil {
 		log.Println("Error creating proxy client:", err)
-		return "", "", "", err
+		return "", "", "", nil
 	}
 
 	rsp, err := client.Get("https://api.myip.com")
 	if err != nil {
 		log.Println(err)
-		return "", "", "", err
+		return "", "", "", nil
 	}
 	defer rsp.Body.Close()
 

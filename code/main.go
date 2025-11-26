@@ -110,7 +110,18 @@ func main() {
 		exportRoutes.GET("all", h.ExportAll)
 		exportRoutes.GET("selected", h.ExportSelected)
 	}
-	router.POST("api/import", h.ImportProxies)
+	
+	router.POST("api/import", func(c *gin.Context) {
+    // Тут вызываем ваш существующий ImportProxies
+    if msg := h.ImportProxies(c); msg == "" {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+		go RunSingleIPCheck(db, settings, geoIP)
+		go RunSingleHealthCheck(db, settings, geoIP)
+		
+	})
 	router.GET("/api/speedLogs", h.GetSpeedLogs)
 	router.GET("/api/ipLogs", h.GetProxyIPLogs)
 	router.POST("/api/proxyVisits", h.CreateProxyVisitLog)
