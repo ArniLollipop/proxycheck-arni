@@ -8,6 +8,9 @@ import (
 	"gorm.io/gorm"
 )
 
+var healthMu sync.Mutex
+var ipCheckMu sync.Mutex
+
 func RunSingleIPCheck(db *gorm.DB, settings *Settings, geoIP *GeoIPClient) {
 	var proxies []Proxy
 	if err := db.Find(&proxies).Error; err != nil {
@@ -94,8 +97,6 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 	for {
 		select {
 		case <-ticker.C:
-			log.Println("Scheduler: Starting scheduled IP check for all proxies...")
-
 			var proxies []Proxy
 			// Загружаем все прокси из базы данных.
 			if err := db.Find(&proxies).Error; err != nil {
@@ -103,12 +104,21 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 				continue // Пропускаем эту итерацию, ждем следующего тика.
 			}
 
-			log.Printf("Scheduler: Found %d proxies to check.", len(proxies))
+			if ipCheckMu.TryLock() {
+				go func() {
+					defer ipCheckMu.Unlock()
+					log.Println("Scheduler: Starting scheduled IP check for all proxies...")
 
-			// Проходим по каждому прокси.
-			IPCheckIterator(proxies, settings, db, geoIPClient);
-			
-			log.Println("Scheduler: Finished scheduled IP check.")
+					log.Printf("Scheduler: Found %d proxies to check.", len(proxies))
+
+					// Проходим по каждому прокси.
+					IPCheckIterator(proxies, settings, db, geoIPClient);
+					
+					log.Println("Scheduler: Finished scheduled IP check.")
+				}()
+			} else {
+				log.Println("Health check skipped — previous job still running")
+			}
 
 		case <-quit:
 			log.Println("Scheduler: Shutting down IP check scheduler.")
@@ -172,10 +182,15 @@ func StartHealthCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gor
 				continue
 			}
 
-			log.Printf("Scheduler: Found %d proxies for health check.", len(proxies))
+			if healthMu.TryLock() {
+				go func() {
+					defer healthMu.Unlock()
+					HealthCheckIterator(proxies, settings, db);
+				}()
+			} else {
+				log.Println("Health check skipped — previous job still running")
+			}
 
-			HealthCheckIterator(proxies, settings, db);
-			log.Println("Scheduler: Finished scheduled health check.")
 
 		case <-quit:
 			log.Println("Scheduler: Shutting down health check scheduler.")
