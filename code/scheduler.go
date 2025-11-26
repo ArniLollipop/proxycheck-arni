@@ -39,18 +39,14 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 			log.Printf("Scheduler: Found %d proxies to check.", len(proxies))
 
 			// Проходим по каждому прокси.
-			for _, p := range proxies {
+			for i := range proxies {
+    		p := &proxies[i]  
 				// Важно: используем &proxies[i], чтобы работать с оригинальным элементом слайса, а не с его копией.
 
 				log.Printf("Scheduler: Checking IP for proxy %s (%s)", p.Ip, p.Id)
 
 				// Вызываем существующую функцию для получения реального IP.
-				realIP, realCountry, operator, err := RealIp(settings, &p, db, geoIPClient)
-
-				if err != nil {
-					log.Println(err);
-					continue;
-				}
+				realIP, realCountry, operator, _ := RealIp(settings, p, db, geoIPClient)
 
 				p.LastCheck = time.Now()
 
@@ -60,7 +56,7 @@ func StartIPCheckScheduler(wg *sync.WaitGroup, quit <-chan struct{}, db *gorm.DB
 				p.Operator = operator
 
 				// 1. Проверяем Ping
-				latency, err := Ping(settings, &p)
+				latency, err := Ping(settings, p)
 				if err != nil || p.LastStatus == 2 {
 					log.Printf("Scheduler: Ping failed for proxy %s: %v", p.Ip, err)
 					p.Failures++;
