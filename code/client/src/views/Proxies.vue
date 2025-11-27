@@ -9,38 +9,35 @@
             <div class="flex gap-2">
               <button
                 @click="showAddModal = true"
-                class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
-              >
+                class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90">
                 <Plus class="w-4 h-4 mr-2" />
                 Add Proxy
               </button>
               <button
                 @click="showImportModal = true"
-                class="inline-flex items-center justify-center rounded-md bg-success px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
-              >
+                class="inline-flex items-center justify-center rounded-md bg-success px-4 py-2 text-center font-medium text-white hover:bg-opacity-90">
                 <Upload class="w-4 h-4 mr-2" />
                 Import
               </button>
               <button
                 @click="exportSelected"
                 :disabled="selectedProxies.length === 0"
-                class="inline-flex items-center justify-center rounded-md bg-secondary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90 disabled:opacity-50"
-              >
+                class="inline-flex items-center justify-center rounded-md bg-secondary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90 disabled:opacity-50">
                 <Download class="w-4 h-4 mr-2" />
                 Export Selected
               </button>
               <button
                 @click="verifySelected"
                 :disabled="selectedProxies.length === 0 || isVerifying"
-                class="inline-flex items-center justify-center rounded-md bg-warning px-4 py-2 text-center font-medium text-white hover:bg-opacity-90 disabled:opacity-50"
-              >
-                <RefreshCw class="w-4 h-4 mr-2" :class="{ 'animate-spin': isVerifying }" />
+                class="inline-flex items-center justify-center rounded-md bg-warning px-4 py-2 text-center font-medium text-white hover:bg-opacity-90 disabled:opacity-50">
+                <RefreshCw
+                  class="w-4 h-4 mr-2"
+                  :class="{ 'animate-spin': isVerifying }" />
                 Verify Selected
               </button>
               <button
                 @click="showColumnSettings = true"
-                class="inline-flex items-center justify-center rounded-md border border-stroke px-4 py-2 text-center font-medium hover:bg-gray dark:border-strokedark"
-              >
+                class="inline-flex items-center justify-center rounded-md border border-stroke px-4 py-2 text-center font-medium hover:bg-gray dark:border-strokedark">
                 <Settings class="w-4 h-4 mr-2" />
                 Columns
               </button>
@@ -50,8 +47,7 @@
                 v-model="searchQuery"
                 type="text"
                 placeholder="Search proxies..."
-                class="rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4"
-              />
+                class="rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
             </div>
           </div>
 
@@ -64,120 +60,232 @@
                     <input
                       type="checkbox"
                       @change="toggleSelectAll"
-                      :checked="selectedProxies.length === proxies.length && proxies.length > 0"
-                      class="cursor-pointer"
-                    />
+                      :checked="
+                        selectedProxies.length === proxies.length &&
+                        proxies.length > 0
+                      "
+                      class="cursor-pointer" />
                   </th>
-                  <th v-if="visibleColumns.status" class="px-2 py-2 font-medium text-black dark:text-white">Status</th>
-                  <th v-if="visibleColumns.client" class="px-2 py-2 font-medium text-black dark:text-white">Client</th>
-                  <th v-if="visibleColumns.modemId" class="px-2 py-2 font-medium text-black dark:text-white">Modem ID</th>
-                  <th v-if="visibleColumns.pcId" class="px-2 py-2 font-medium text-black dark:text-white">PC ID</th>
-                  <th v-if="visibleColumns.serverIp" class="px-2 py-2 font-medium text-black dark:text-white">Server IP</th>
-                  <th v-if="visibleColumns.port" class="px-2 py-2 font-medium text-black dark:text-white">Port</th>
-                  <th v-if="visibleColumns.realIp" class="px-2 py-2 font-medium text-black dark:text-white">Real IP</th>
-                  <th v-if="visibleColumns.country" class="px-2 py-2 font-medium text-black dark:text-white">Country</th>
-                  <th v-if="visibleColumns.operator" class="px-2 py-2 font-medium text-black dark:text-white">Operator</th>
-                  <th v-if="visibleColumns.phone" class="px-2 py-2 font-medium text-black dark:text-white">Phone</th>
-                  <th v-if="visibleColumns.username" class="px-2 py-2 font-medium text-black dark:text-white">Username</th>
-                  <th v-if="visibleColumns.password" class="px-2 py-2 font-medium text-black dark:text-white">Password</th>
-                  <th v-if="visibleColumns.uptime" class="px-2 py-2 font-medium text-black dark:text-white">Uptime</th>
-                  <th v-if="visibleColumns.latency" class="px-2 py-2 font-medium text-black dark:text-white">Latency</th>
-                  <th v-if="visibleColumns.download" class="px-2 py-2 font-medium text-black dark:text-white">Speed ↓</th>
-                  <th v-if="visibleColumns.upload" class="px-2 py-2 font-medium text-black dark:text-white">Speed ↑</th>
-                  <th v-if="visibleColumns.traffic24h" class="px-2 py-2 font-medium text-black dark:text-white">Traffic 24h</th>
-                  <th v-if="visibleColumns.trafficLeft" class="px-2 py-2 font-medium text-black dark:text-white">Traffic Left</th>
-                  <th v-if="visibleColumns.logs" class="px-2 py-2 font-medium text-black dark:text-white">Logs</th>
-                  <th class="px-2 py-2 font-medium text-black dark:text-white">Actions</th>
+                  <th
+                    v-if="visibleColumns.status"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Status
+                  </th>
+                  <th
+                    v-if="visibleColumns.client"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Client
+                  </th>
+                  <th
+                    v-if="visibleColumns.modemId"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Modem ID
+                  </th>
+                  <th
+                    v-if="visibleColumns.pcId"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    PC ID
+                  </th>
+                  <th
+                    v-if="visibleColumns.serverIp"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Server IP
+                  </th>
+                  <th
+                    v-if="visibleColumns.port"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Port
+                  </th>
+                  <th
+                    v-if="visibleColumns.realIp"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Real IP
+                  </th>
+                  <th
+                    v-if="visibleColumns.country"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Country
+                  </th>
+                  <th
+                    v-if="visibleColumns.operator"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Operator
+                  </th>
+                  <th
+                    v-if="visibleColumns.phone"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Phone
+                  </th>
+                  <th
+                    v-if="visibleColumns.username"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Username
+                  </th>
+                  <th
+                    v-if="visibleColumns.password"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Password
+                  </th>
+                  <th
+                    v-if="visibleColumns.uptime"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Uptime
+                  </th>
+                  <th
+                    v-if="visibleColumns.latency"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Latency
+                  </th>
+                  <th
+                    v-if="visibleColumns.download"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Speed ↓
+                  </th>
+                  <th
+                    v-if="visibleColumns.upload"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Speed ↑
+                  </th>
+                  <th
+                    v-if="visibleColumns.traffic24h"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Traffic 24h
+                  </th>
+                  <th
+                    v-if="visibleColumns.trafficLeft"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Traffic Left
+                  </th>
+                  <th
+                    v-if="visibleColumns.logs"
+                    class="px-2 py-2 font-medium text-black dark:text-white">
+                    Logs
+                  </th>
+                  <th class="px-2 py-2 font-medium text-black dark:text-white">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 <tr
                   v-for="proxy in filteredProxies"
                   :key="proxy.id"
-                  class="border-b border-stroke dark:border-strokedark hover:bg-gray-2 dark:hover:bg-meta-4"
-                >
+                  class="border-b border-stroke dark:border-strokedark hover:bg-gray-2 dark:hover:bg-meta-4">
                   <td class="px-2 py-2">
                     <input
                       type="checkbox"
                       :checked="selectedProxies.includes(proxy.id)"
                       @change="toggleSelect(proxy.id)"
-                      class="cursor-pointer"
-                    />
+                      class="cursor-pointer" />
                   </td>
 
                   <!-- Status -->
                   <td v-if="visibleColumns.status" class="px-2 py-2">
                     <div class="flex items-center gap-1">
-                      <span :class="{
-                        'text-success': proxy.lastStatus === 1,
-                        'text-warning': proxy.lastStatus === 0,
-                        'text-danger': proxy.lastStatus === 2
-                      }" class="text-xl">
-                        {{ proxy.lastStatus === 1 ? '🟢' : proxy.lastStatus === 2 ? '🔴' : '🟡' }}
+                      <span
+                        :class="{
+                          'text-success': proxy.lastStatus === 1,
+                          'text-warning': proxy.lastStatus === 0,
+                          'text-danger': proxy.lastStatus === 2,
+                        }"
+                        class="text-xl">
+                        {{
+                          proxy.lastStatus === 1
+                            ? "🟢"
+                            : proxy.lastStatus === 2
+                              ? "🔴"
+                              : "🟡"
+                        }}
                       </span>
-                      <span v-if="proxy.failures > 0" class="text-xs text-bodydark">({{ proxy.failures }})</span>
+                      <span
+                        v-if="proxy.failures > 0"
+                        class="text-xs text-bodydark"
+                        >({{ proxy.failures }})</span
+                      >
                     </div>
                   </td>
 
                   <!-- Client -->
-                  <td v-if="visibleColumns.client" class="px-2 py-2 text-black dark:text-white">
-                    {{ proxy.name || '-' }}
+                  <td
+                    v-if="visibleColumns.client"
+                    class="px-2 py-2 text-black dark:text-white">
+                    {{ proxy.name || "-" }}
                   </td>
 
                   <!-- Modem ID (using contacts field) -->
-                  <td v-if="visibleColumns.modemId" class="px-2 py-2 text-black dark:text-white text-xs">
-                    {{ proxy.contacts || '-' }}
+                  <td
+                    v-if="visibleColumns.modemId"
+                    class="px-2 py-2 text-black dark:text-white text-xs">
+                    {{ proxy.contacts || "-" }}
                   </td>
 
                   <!-- PC ID (can add new field to backend) -->
-                  <td v-if="visibleColumns.pcId" class="px-2 py-2 text-black dark:text-white text-xs">
+                  <td
+                    v-if="visibleColumns.pcId"
+                    class="px-2 py-2 text-black dark:text-white text-xs">
                     -
                   </td>
 
                   <!-- Server IP -->
-                  <td v-if="visibleColumns.serverIp" class="px-2 py-2 text-black dark:text-white font-mono text-xs">
+                  <td
+                    v-if="visibleColumns.serverIp"
+                    class="px-2 py-2 text-black dark:text-white font-mono text-xs">
                     {{ proxy.ip }}
                   </td>
 
                   <!-- Port -->
-                  <td v-if="visibleColumns.port" class="px-2 py-2 text-black dark:text-white font-mono text-xs">
+                  <td
+                    v-if="visibleColumns.port"
+                    class="px-2 py-2 text-black dark:text-white font-mono text-xs">
                     {{ proxy.port }}
                   </td>
 
                   <!-- Real IP with time since change -->
-                  <td v-if="visibleColumns.realIp" class="px-2 py-2 text-black dark:text-white font-mono text-xs">
+                  <td
+                    v-if="visibleColumns.realIp"
+                    class="px-2 py-2 text-black dark:text-white font-mono text-xs">
                     <div class="flex flex-col">
-                      <span>{{ proxy.realIP || '-' }}</span>
-                      <span v-if="proxy.lastCheck" class="text-xs text-bodydark">
+                      <span>{{ proxy.realIP || "-" }}</span>
+                      <span
+                        v-if="proxy.lastCheck"
+                        class="text-xs text-bodydark">
                         ({{ getMinutesSince(proxy.lastCheck) }}m ago)
                       </span>
                     </div>
                   </td>
 
                   <!-- Country -->
-                  <td v-if="visibleColumns.country" class="px-2 py-2 text-black dark:text-white text-xs">
-                    {{ proxy.realCountry || '-' }}
+                  <td
+                    v-if="visibleColumns.country"
+                    class="px-2 py-2 text-black dark:text-white text-xs">
+                    {{ proxy.realCountry || "-" }}
                   </td>
 
                   <!-- Operator -->
-                  <td v-if="visibleColumns.operator" class="px-2 py-2 text-black dark:text-white text-xs">
-                    {{ proxy.operator || '-' }}
+                  <td
+                    v-if="visibleColumns.operator"
+                    class="px-2 py-2 text-black dark:text-white text-xs">
+                    {{ proxy.operator || "-" }}
                   </td>
 
                   <!-- Phone -->
-                  <td v-if="visibleColumns.phone" class="px-2 py-2 text-black dark:text-white text-xs">
-                    {{ proxy.phone || '-' }}
+                  <td
+                    v-if="visibleColumns.phone"
+                    class="px-2 py-2 text-black dark:text-white text-xs">
+                    {{ proxy.phone || "-" }}
                   </td>
 
                   <!-- Username with copy -->
                   <td v-if="visibleColumns.username" class="px-2 py-2">
                     <div class="flex items-center gap-1">
-                      <span class="text-black dark:text-white font-mono text-xs">{{ proxy.username }}</span>
+                      <span
+                        class="text-black dark:text-white font-mono text-xs"
+                        >{{ proxy.username }}</span
+                      >
                       <button
                         @click="copyToClipboard(proxy.username)"
                         class="text-primary hover:text-opacity-80"
-                        title="Copy username"
-                      >
+                        title="Copy username">
                         <Key class="w-3 h-3" />
                       </button>
                     </div>
@@ -186,14 +294,14 @@
                   <!-- Password with show/hide -->
                   <td v-if="visibleColumns.password" class="px-2 py-2">
                     <div class="flex items-center gap-1">
-                      <span class="text-black dark:text-white font-mono text-xs">
-                        {{ showPasswords[proxy.id] ? proxy.password : '***' }}
+                      <span
+                        class="text-black dark:text-white font-mono text-xs">
+                        {{ showPasswords[proxy.id] ? proxy.password : "***" }}
                       </span>
                       <button
                         @click="togglePassword(proxy.id)"
                         class="text-bodydark hover:text-black dark:hover:text-white"
-                        :title="showPasswords[proxy.id] ? 'Hide' : 'Show'"
-                      >
+                        :title="showPasswords[proxy.id] ? 'Hide' : 'Show'">
                         <Eye v-if="showPasswords[proxy.id]" class="w-3 h-3" />
                         <EyeOff v-else class="w-3 h-3" />
                       </button>
@@ -205,11 +313,12 @@
                     <span
                       :class="{
                         'text-success': getUptimePercent(proxy) >= 95,
-                        'text-warning': getUptimePercent(proxy) >= 70 && getUptimePercent(proxy) < 95,
-                        'text-danger': getUptimePercent(proxy) < 70
+                        'text-warning':
+                          getUptimePercent(proxy) >= 70 &&
+                          getUptimePercent(proxy) < 95,
+                        'text-danger': getUptimePercent(proxy) < 70,
                       }"
-                      class="font-medium text-xs"
-                    >
+                      class="font-medium text-xs">
                       {{ getUptimePercent(proxy).toFixed(1) }}%
                     </span>
                   </td>
@@ -217,28 +326,38 @@
                   <!-- Latency with trend -->
                   <td v-if="visibleColumns.latency" class="px-2 py-2">
                     <div class="flex items-center gap-1">
-                      <span class="text-black dark:text-white text-xs">{{ proxy.lastLatency || 0 }}ms</span>
+                      <span class="text-black dark:text-white text-xs"
+                        >{{ proxy.lastLatency || 0 }}ms</span
+                      >
                       <span class="text-bodydark text-xs">→</span>
                     </div>
                   </td>
 
                   <!-- Download Speed -->
-                  <td v-if="visibleColumns.download" class="px-2 py-2 text-black dark:text-white text-xs">
+                  <td
+                    v-if="visibleColumns.download"
+                    class="px-2 py-2 text-black dark:text-white text-xs">
                     {{ proxy.speed || 0 }} Mbps
                   </td>
 
                   <!-- Upload Speed -->
-                  <td v-if="visibleColumns.upload" class="px-2 py-2 text-black dark:text-white text-xs">
+                  <td
+                    v-if="visibleColumns.upload"
+                    class="px-2 py-2 text-black dark:text-white text-xs">
                     {{ proxy.upload || 0 }} Mbps
                   </td>
 
                   <!-- Traffic 24h (placeholder) -->
-                  <td v-if="visibleColumns.traffic24h" class="px-2 py-2 text-black dark:text-white text-xs">
+                  <td
+                    v-if="visibleColumns.traffic24h"
+                    class="px-2 py-2 text-black dark:text-white text-xs">
                     - GB
                   </td>
 
                   <!-- Traffic Left (placeholder) -->
-                  <td v-if="visibleColumns.trafficLeft" class="px-2 py-2 text-black dark:text-white text-xs">
+                  <td
+                    v-if="visibleColumns.trafficLeft"
+                    class="px-2 py-2 text-black dark:text-white text-xs">
                     - GB
                   </td>
 
@@ -246,8 +365,7 @@
                   <td v-if="visibleColumns.logs" class="px-2 py-2">
                     <button
                       @click="viewLogs(proxy.id)"
-                      class="text-primary hover:underline text-xs"
-                    >
+                      class="text-primary hover:underline text-xs">
                       View Logs
                     </button>
                   </td>
@@ -258,43 +376,40 @@
                       <button
                         @click="verifySingle(proxy.id)"
                         class="text-primary hover:text-opacity-80"
-                        title="Refresh/Verify"
-                      >
+                        title="Refresh/Verify">
                         <RefreshCw class="w-4 h-4" />
                       </button>
                       <button
                         @click="editProxy(proxy)"
                         class="text-secondary hover:text-opacity-80"
-                        title="Settings"
-                      >
+                        title="Settings">
                         <Settings class="w-4 h-4" />
                       </button>
                       <button
                         @click="viewDetails(proxy)"
                         class="text-success hover:text-opacity-80"
-                        title="View Details"
-                      >
+                        title="View Details">
                         <Search class="w-4 h-4" />
                       </button>
                       <button
                         @click="deleteProxy(proxy.id)"
                         class="text-danger hover:text-opacity-80"
-                        title="Delete"
-                      >
+                        title="Delete">
                         <X class="w-4 h-4" />
                       </button>
                       <button
                         @click="copyProxyString(proxy)"
                         class="text-warning hover:text-opacity-80"
-                        title="Copy proxy string"
-                      >
+                        title="Copy proxy string">
                         <Clipboard class="w-4 h-4" />
                       </button>
                     </div>
                   </td>
                 </tr>
                 <tr v-if="proxies.length === 0">
-                  <td :colspan="getVisibleColumnCount()" class="px-4 py-8 text-center text-bodydark">
+                  <td
+                    :colspan="getVisibleColumnCount()"
+                    class="px-4 py-8 text-center text-bodydark">
                     No proxies found. Add a proxy to get started.
                   </td>
                 </tr>
@@ -309,31 +424,33 @@
     <div
       v-if="showColumnSettings"
       class="fixed inset-0 z-999999 flex items-center justify-center bg-black bg-opacity-50"
-      @click.self="showColumnSettings = false"
-    >
-      <div class="w-full max-w-2xl rounded-lg bg-white p-6 dark:bg-boxdark max-h-[80vh] overflow-y-auto">
-        <h3 class="mb-4 text-xl font-semibold text-black dark:text-white">Column Settings</h3>
+      @click.self="showColumnSettings = false">
+      <div
+        class="w-full max-w-2xl rounded-lg bg-white p-6 dark:bg-boxdark max-h-[80vh] overflow-y-auto">
+        <h3 class="mb-4 text-xl font-semibold text-black dark:text-white">
+          Column Settings
+        </h3>
         <div class="grid grid-cols-2 gap-3">
-          <label v-for="(column, key) in columnLabels" :key="key" class="flex items-center cursor-pointer">
+          <label
+            v-for="(column, key) in columnLabels"
+            :key="key"
+            class="flex items-center cursor-pointer">
             <input
               v-model="visibleColumns[key]"
               type="checkbox"
-              class="mr-2 cursor-pointer"
-            />
+              class="mr-2 cursor-pointer" />
             <span class="text-sm text-black dark:text-white">{{ column }}</span>
           </label>
         </div>
         <div class="mt-6 flex justify-end gap-3">
           <button
             @click="resetColumns"
-            class="rounded-md border border-stroke px-4 py-2 hover:bg-gray dark:border-strokedark"
-          >
+            class="rounded-md border border-stroke px-4 py-2 hover:bg-gray dark:border-strokedark">
             Reset to Default
           </button>
           <button
             @click="saveColumnSettings"
-            class="rounded-md bg-primary px-4 py-2 text-white hover:bg-opacity-90"
-          >
+            class="rounded-md bg-primary px-4 py-2 text-white hover:bg-opacity-90">
             Save
           </button>
         </div>
@@ -344,88 +461,102 @@
     <div
       v-if="showAddModal || showEditModal"
       class="fixed inset-0 z-999999 flex items-center justify-center bg-black bg-opacity-50"
-      @click.self="closeModals"
-    >
-      <div class="w-full max-w-2xl rounded-lg bg-white p-6 dark:bg-boxdark max-h-[80vh] overflow-y-auto">
+      @click.self="closeModals">
+      <div
+        class="w-full max-w-2xl rounded-lg bg-white p-6 dark:bg-boxdark max-h-[80vh] overflow-y-auto">
         <h3 class="mb-4 text-xl font-semibold text-black dark:text-white">
-          {{ showEditModal ? 'Edit Proxy' : 'Add Proxy' }}
+          {{ showEditModal ? "Edit Proxy" : "Add Proxy" }}
         </h3>
-        <form @submit.prevent="showEditModal ? updateProxy() : createProxy()" class="space-y-4">
+        <form
+          @submit.prevent="showEditModal ? updateProxy() : createProxy()"
+          class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="mb-2 block text-sm font-medium text-black dark:text-white">Client/Name</label>
+              <label
+                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                >Client/Name</label
+              >
               <input
                 v-model="proxyForm.name"
                 type="text"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4"
-              />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
             </div>
             <div>
-              <label class="mb-2 block text-sm font-medium text-black dark:text-white">IP Address *</label>
+              <label
+                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                >IP Address *</label
+              >
               <input
                 v-model="proxyForm.ip"
                 type="text"
                 required
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4"
-              />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
             </div>
             <div>
-              <label class="mb-2 block text-sm font-medium text-black dark:text-white">Port *</label>
+              <label
+                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                >Port *</label
+              >
               <input
                 v-model="proxyForm.port"
                 type="text"
                 required
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4"
-              />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
             </div>
             <div>
-              <label class="mb-2 block text-sm font-medium text-black dark:text-white">Username *</label>
+              <label
+                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                >Username *</label
+              >
               <input
                 v-model="proxyForm.username"
                 type="text"
                 required
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4"
-              />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
             </div>
             <div>
-              <label class="mb-2 block text-sm font-medium text-black dark:text-white">Password *</label>
+              <label
+                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                >Password *</label
+              >
               <input
                 v-model="proxyForm.password"
                 type="password"
                 required
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4"
-              />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
             </div>
             <div>
-              <label class="mb-2 block text-sm font-medium text-black dark:text-white">Phone</label>
+              <label
+                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                >Phone</label
+              >
               <input
                 v-model="proxyForm.phone"
                 type="text"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4"
-              />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
             </div>
             <div class="col-span-2">
-              <label class="mb-2 block text-sm font-medium text-black dark:text-white">Modem ID / Contacts</label>
+              <label
+                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                >Modem ID / Contacts</label
+              >
               <input
                 v-model="proxyForm.contacts"
                 type="text"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4"
-              />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
             </div>
           </div>
           <div class="flex justify-end gap-3">
             <button
               type="button"
               @click="closeModals"
-              class="rounded-md border border-stroke px-4 py-2 hover:bg-gray dark:border-strokedark"
-            >
+              class="rounded-md border border-stroke px-4 py-2 hover:bg-gray dark:border-strokedark">
               Cancel
             </button>
             <button
               type="submit"
-              class="rounded-md bg-primary px-4 py-2 text-white hover:bg-opacity-90"
-            >
-              {{ showEditModal ? 'Update' : 'Create' }}
+              class="rounded-md bg-primary px-4 py-2 text-white hover:bg-opacity-90">
+              {{ showEditModal ? "Update" : "Create" }}
             </button>
           </div>
         </form>
@@ -436,13 +567,15 @@
     <div
       v-if="showImportModal"
       class="fixed inset-0 z-999999 flex items-center justify-center bg-black bg-opacity-50"
-      @click.self="showImportModal = false"
-    >
+      @click.self="showImportModal = false">
       <div class="w-full max-w-lg rounded-lg bg-white p-6 dark:bg-boxdark">
-        <h3 class="mb-4 text-xl font-semibold text-black dark:text-white">Import Proxies</h3>
+        <h3 class="mb-4 text-xl font-semibold text-black dark:text-white">
+          Import Proxies
+        </h3>
         <form @submit.prevent="importProxies" class="space-y-4">
           <div>
-            <label class="mb-2 block text-sm font-medium text-black dark:text-white">
+            <label
+              class="mb-2 block text-sm font-medium text-black dark:text-white">
               Select file (format: ip:port:username:password|name|contacts)
             </label>
             <input
@@ -450,22 +583,19 @@
               type="file"
               accept=".txt"
               @change="handleFileSelect"
-              class="w-full"
-            />
+              class="w-full" />
           </div>
           <div class="flex justify-end gap-3">
             <button
               type="button"
               @click="showImportModal = false"
-              class="rounded-md border border-stroke px-4 py-2 hover:bg-gray dark:border-strokedark"
-            >
+              class="rounded-md border border-stroke px-4 py-2 hover:bg-gray dark:border-strokedark">
               Cancel
             </button>
             <button
               type="submit"
               :disabled="!selectedFile"
-              class="rounded-md bg-primary px-4 py-2 text-white hover:bg-opacity-90 disabled:opacity-50"
-            >
+              class="rounded-md bg-primary px-4 py-2 text-white hover:bg-opacity-90 disabled:opacity-50">
               Import
             </button>
           </div>
@@ -475,51 +605,60 @@
   </AdminLayout>
 </template>
 
-<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+<script setup>
+import { ref, computed, onMounted } from "vue";
 import {
-  Plus, Upload, Download, RefreshCw, Settings, Search, X,
-  Clipboard, Key, Eye, EyeOff
-} from 'lucide-vue-next'
-import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
-import AdminLayout from '@/components/layout/AdminLayout.vue'
-import ComponentCard from '@/components/common/ComponentCard.vue'
-import axios from 'axios'
+  Plus,
+  Upload,
+  Download,
+  RefreshCw,
+  Settings,
+  Search,
+  X,
+  Clipboard,
+  Key,
+  Eye,
+  EyeOff,
+} from "lucide-vue-next";
+import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
+import AdminLayout from "@/components/layout/AdminLayout.vue";
+import ComponentCard from "@/components/common/ComponentCard.vue";
+import axios from "axios";
 
-const currentPageTitle = ref('Proxies')
-const proxies = ref([])
-const selectedProxies = ref([])
-const searchQuery = ref('')
-const showAddModal = ref(false)
-const showEditModal = ref(false)
-const showImportModal = ref(false)
-const showColumnSettings = ref(false)
-const isVerifying = ref(false)
-const selectedFile = ref(null)
-const fileInput = ref(null)
-const showPasswords = ref({})
+const currentPageTitle = ref("Proxies");
+const proxies = ref([]);
+const selectedProxies = ref([]);
+const searchQuery = ref("");
+const showAddModal = ref(false);
+const showEditModal = ref(false);
+const showImportModal = ref(false);
+const showColumnSettings = ref(false);
+const isVerifying = ref(false);
+const selectedFile = ref(null);
+const fileInput = ref(null);
+const showPasswords = ref({});
 
 const columnLabels = {
-  status: 'Status',
-  client: 'Client/Tenant',
-  modemId: 'Modem ID',
-  pcId: 'PC ID/Address',
-  serverIp: 'Server IP',
-  port: 'Port',
-  realIp: 'Real IP',
-  country: 'Country',
-  operator: 'Operator',
-  phone: 'Phone',
-  username: 'Username',
-  password: 'Password',
-  uptime: 'Uptime %',
-  latency: 'Latency',
-  download: 'Speed ↓',
-  upload: 'Speed ↑',
-  traffic24h: 'Traffic 24h',
-  trafficLeft: 'Traffic Left',
-  logs: 'Logs Analysis'
-}
+  status: "Status",
+  client: "Client/Tenant",
+  modemId: "Modem ID",
+  pcId: "PC ID/Address",
+  serverIp: "Server IP",
+  port: "Port",
+  realIp: "Real IP",
+  country: "Country",
+  operator: "Operator",
+  phone: "Phone",
+  username: "Username",
+  password: "Password",
+  uptime: "Uptime %",
+  latency: "Latency",
+  download: "Speed ↓",
+  upload: "Speed ↑",
+  traffic24h: "Traffic 24h",
+  trafficLeft: "Traffic Left",
+  logs: "Logs Analysis",
+};
 
 const visibleColumns = ref({
   status: true,
@@ -540,72 +679,73 @@ const visibleColumns = ref({
   upload: true,
   traffic24h: false,
   trafficLeft: false,
-  logs: true
-})
+  logs: true,
+});
 
 const proxyForm = ref({
-  id: '',
-  name: '',
-  ip: '',
-  port: '',
-  username: '',
-  password: '',
-  phone: '',
-  contacts: ''
-})
+  id: "",
+  name: "",
+  ip: "",
+  port: "",
+  username: "",
+  password: "",
+  phone: "",
+  contacts: "",
+});
 
 const filteredProxies = computed(() => {
-  if (!searchQuery.value) return proxies.value
-  const query = searchQuery.value.toLowerCase()
-  return proxies.value.filter((proxy: any) =>
-    proxy.name?.toLowerCase().includes(query) ||
-    proxy.ip?.toLowerCase().includes(query) ||
-    proxy.username?.toLowerCase().includes(query) ||
-    proxy.realIP?.toLowerCase().includes(query) ||
-    proxy.realCountry?.toLowerCase().includes(query) ||
-    proxy.phone?.toLowerCase().includes(query) ||
-    proxy.contacts?.toLowerCase().includes(query)
-  )
-})
+  if (!searchQuery.value) return proxies.value;
+  const query = searchQuery.value.toLowerCase();
+  return proxies.value.filter(
+    (proxy) =>
+      proxy.name?.toLowerCase().includes(query) ||
+      proxy.ip?.toLowerCase().includes(query) ||
+      proxy.username?.toLowerCase().includes(query) ||
+      proxy.realIP?.toLowerCase().includes(query) ||
+      proxy.realCountry?.toLowerCase().includes(query) ||
+      proxy.phone?.toLowerCase().includes(query) ||
+      proxy.contacts?.toLowerCase().includes(query)
+  );
+});
 
 const getVisibleColumnCount = () => {
-  return Object.values(visibleColumns.value).filter(v => v).length + 2 // +2 for checkbox and actions
-}
+  return Object.values(visibleColumns.value).filter((v) => v).length + 2; // +2 for checkbox and actions
+};
 
-const getUptimePercent = (proxy: any) => {
-  const totalTime = proxy.uptime + (proxy.failures * 15) // Assume 15 min per failure
-  if (totalTime === 0) return 100
-  return (proxy.uptime / totalTime) * 100
-}
+const getUptimePercent = (proxy) => {
+  const totalTime = proxy.uptime + proxy.failures * 15; // Assume 15 min per failure
+  if (totalTime === 0) return 100;
+  return (proxy.uptime / totalTime) * 100;
+};
 
-const getMinutesSince = (lastCheck: string) => {
-  if (!lastCheck) return 0
-  const diff = Date.now() - new Date(lastCheck).getTime()
-  return Math.floor(diff / 60000)
-}
+const getMinutesSince = (lastCheck) => {
+  if (!lastCheck) return 0;
+  const diff = Date.now() - new Date(lastCheck).getTime();
+  return Math.floor(diff / 60000);
+};
 
-const togglePassword = (proxyId: string) => {
-  showPasswords.value[proxyId] = !showPasswords.value[proxyId]
-}
+const togglePassword = (proxyId) => {
+  showPasswords.value[proxyId] = !showPasswords.value[proxyId];
+};
 
-const copyToClipboard = async (text: string) => {
+const copyToClipboard = async (text) => {
   try {
-    await navigator.clipboard.writeText(text)
-    alert('Copied to clipboard!')
+    await navigator.clipboard.writeText(text);
+    alert("Copied to clipboard!");
   } catch (err) {
-    console.error('Failed to copy:', err)
+    console.error("Failed to copy:", err);
   }
-}
+};
 
-const copyProxyString = (proxy: any) => {
-  const proxyString = `${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}`
-  copyToClipboard(proxyString)
-}
+const copyProxyString = (proxy) => {
+  const proxyString = `${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}`;
+  copyToClipboard(proxyString);
+};
 
 const saveColumnSettings = () => {
-  localStorage.setItem('proxyColumns', JSON.stringify(visibleColumns.value))
-  showColumnSettings.value = false
-}
+  localStorage.setItem("proxyColumns", JSON.stringify(visibleColumns.value));
+  showColumnSettings.value = false;
+};
 
 const resetColumns = () => {
   visibleColumns.value = {
@@ -627,177 +767,177 @@ const resetColumns = () => {
     upload: true,
     traffic24h: false,
     trafficLeft: false,
-    logs: true
-  }
-}
+    logs: true,
+  };
+};
 
 const loadColumnSettings = () => {
-  const saved = localStorage.getItem('proxyColumns')
+  const saved = localStorage.getItem("proxyColumns");
   if (saved) {
-    visibleColumns.value = JSON.parse(saved)
+    visibleColumns.value = JSON.parse(saved);
   }
-}
+};
 
 const fetchProxies = async () => {
   try {
-    const response = await axios.get('/api/proxy')
-    proxies.value = response.data.data || []
+    const response = await axios.get("/api/proxy");
+    proxies.value = response.data.data || [];
   } catch (error) {
-    console.error('Failed to fetch proxies:', error)
+    console.error("Failed to fetch proxies:", error);
   }
-}
+};
 
 const createProxy = async () => {
   try {
-    await axios.post('/api/proxy', proxyForm.value)
-    await fetchProxies()
-    closeModals()
-    resetForm()
+    await axios.post("/api/proxy", proxyForm.value);
+    await fetchProxies();
+    closeModals();
+    resetForm();
   } catch (error) {
-    console.error('Failed to create proxy:', error)
-    alert('Failed to create proxy')
+    console.error("Failed to create proxy:", error);
+    alert("Failed to create proxy");
   }
-}
+};
 
 const updateProxy = async () => {
   try {
-    await axios.put(`/api/proxy/${proxyForm.value.id}`, proxyForm.value)
-    await fetchProxies()
-    closeModals()
-    resetForm()
+    await axios.put(`/api/proxy/${proxyForm.value.id}`, proxyForm.value);
+    await fetchProxies();
+    closeModals();
+    resetForm();
   } catch (error) {
-    console.error('Failed to update proxy:', error)
-    alert('Failed to update proxy')
+    console.error("Failed to update proxy:", error);
+    alert("Failed to update proxy");
   }
-}
+};
 
-const deleteProxy = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this proxy?')) return
+const deleteProxy = async (id) => {
+  if (!confirm("Are you sure you want to delete this proxy?")) return;
   try {
-    await axios.delete(`/api/proxy/${id}`)
-    await fetchProxies()
+    await axios.delete(`/api/proxy/${id}`);
+    await fetchProxies();
   } catch (error) {
-    console.error('Failed to delete proxy:', error)
-    alert('Failed to delete proxy')
+    console.error("Failed to delete proxy:", error);
+    alert("Failed to delete proxy");
   }
-}
+};
 
-const editProxy = (proxy: any) => {
-  proxyForm.value = { ...proxy }
-  showEditModal.value = true
-}
+const editProxy = (proxy) => {
+  proxyForm.value = { ...proxy };
+  showEditModal.value = true;
+};
 
-const viewDetails = (proxy: any) => {
+const viewDetails = (proxy) => {
   // Could open a detail modal or navigate to detail page
-  alert(`Viewing details for ${proxy.name || proxy.ip}`)
-}
+  alert(`Viewing details for ${proxy.name || proxy.ip}`);
+};
 
-const verifySingle = async (id: string) => {
-  selectedProxies.value = [id]
-  await verifySelected()
-}
+const verifySingle = async (id) => {
+  selectedProxies.value = [id];
+  await verifySelected();
+};
 
-const toggleSelect = (id: string) => {
-  const index = selectedProxies.value.indexOf(id)
+const toggleSelect = (id) => {
+  const index = selectedProxies.value.indexOf(id);
   if (index > -1) {
-    selectedProxies.value.splice(index, 1)
+    selectedProxies.value.splice(index, 1);
   } else {
-    selectedProxies.value.push(id)
+    selectedProxies.value.push(id);
   }
-}
+};
 
 const toggleSelectAll = () => {
   if (selectedProxies.value.length === proxies.value.length) {
-    selectedProxies.value = []
+    selectedProxies.value = [];
   } else {
-    selectedProxies.value = proxies.value.map((p: any) => p.id)
+    selectedProxies.value = proxies.value.map((p) => p.id);
   }
-}
+};
 
 const exportSelected = () => {
-  const ids = selectedProxies.value.join(',')
-  window.location.href = `/api/export/selected?ids=${ids}`
-}
+  const ids = selectedProxies.value.join(",");
+  window.location.href = `/api/export/selected?ids=${ids}`;
+};
 
 const verifySelected = async () => {
-  if (selectedProxies.value.length === 0) return
+  if (selectedProxies.value.length === 0) return;
 
-  isVerifying.value = true
-  const ids = selectedProxies.value.join(',')
+  isVerifying.value = true;
+  const ids = selectedProxies.value.join(",");
 
-  const eventSource = new EventSource(`/api/proxy/verify-batch?ids=${ids}`)
+  const eventSource = new EventSource(`/api/proxy/verify-batch?ids=${ids}`);
 
-  eventSource.addEventListener('progress', (event) => {
-    const data = JSON.parse(event.data)
-    const index = proxies.value.findIndex((p: any) => p.id === data.id)
+  eventSource.addEventListener("progress", (event) => {
+    const data = JSON.parse(event.data);
+    const index = proxies.value.findIndex((p) => p.id === data.id);
     if (index > -1) {
-      proxies.value[index] = data
+      proxies.value[index] = data;
     }
-  })
+  });
 
-  eventSource.addEventListener('complete', () => {
-    isVerifying.value = false
-    eventSource.close()
-    selectedProxies.value = []
-  })
+  eventSource.addEventListener("complete", () => {
+    isVerifying.value = false;
+    eventSource.close();
+    selectedProxies.value = [];
+  });
 
   eventSource.onerror = () => {
-    isVerifying.value = false
-    eventSource.close()
-  }
-}
+    isVerifying.value = false;
+    eventSource.close();
+  };
+};
 
-const handleFileSelect = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  selectedFile.value = target.files?.[0] || null
-}
+const handleFileSelect = (event) => {
+  const target = event.target;
+  selectedFile.value = target.files?.[0] || null;
+};
 
 const importProxies = async () => {
-  if (!selectedFile.value) return
+  if (!selectedFile.value) return;
 
-  const formData = new FormData()
-  formData.append('file', selectedFile.value)
+  const formData = new FormData();
+  formData.append("file", selectedFile.value);
 
   try {
-    const response = await axios.post('/api/import', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-    alert(response.data.message)
-    await fetchProxies()
-    showImportModal.value = false
-    selectedFile.value = null
-    if (fileInput.value) fileInput.value.value = ''
+    const response = await axios.post("/api/import", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    alert(response.data.message);
+    await fetchProxies();
+    showImportModal.value = false;
+    selectedFile.value = null;
+    if (fileInput.value) fileInput.value.value = "";
   } catch (error) {
-    console.error('Failed to import proxies:', error)
-    alert('Failed to import proxies')
+    console.error("Failed to import proxies:", error);
+    alert("Failed to import proxies");
   }
-}
+};
 
-const viewLogs = (proxyId: string) => {
-  window.location.href = `/failure-logs?proxy_id=${proxyId}`
-}
+const viewLogs = (proxyId) => {
+  window.location.href = `/failure-logs?proxy_id=${proxyId}`;
+};
 
 const closeModals = () => {
-  showAddModal.value = false
-  showEditModal.value = false
-  resetForm()
-}
+  showAddModal.value = false;
+  showEditModal.value = false;
+  resetForm();
+};
 
 const resetForm = () => {
   proxyForm.value = {
-    id: '',
-    name: '',
-    ip: '',
-    port: '',
-    username: '',
-    password: '',
-    phone: '',
-    contacts: ''
-  }
-}
+    id: "",
+    name: "",
+    ip: "",
+    port: "",
+    username: "",
+    password: "",
+    phone: "",
+    contacts: "",
+  };
+};
 
 onMounted(() => {
-  loadColumnSettings()
-  fetchProxies()
-})
+  loadColumnSettings();
+  fetchProxies();
+});
 </script>
