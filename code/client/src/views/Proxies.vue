@@ -9,27 +9,27 @@
             <div class="flex gap-2">
               <button
                 @click="showAddModal = true"
-                class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90">
+                class="inline-flex items-center justify-center rounded-md border border-stroke px-4 py-2 text-center font-medium hover:bg-gray">
                 <Plus class="w-4 h-4 mr-2" />
                 Add Proxy
               </button>
               <button
                 @click="showImportModal = true"
-                class="inline-flex items-center justify-center rounded-md bg-success px-4 py-2 text-center font-medium text-white hover:bg-opacity-90">
+                class="inline-flex items-center justify-center rounded-md border border-stroke px-4 py-2 text-center font-medium hover:bg-gray">
                 <Upload class="w-4 h-4 mr-2" />
                 Import
               </button>
               <button
                 @click="exportSelected"
                 :disabled="selectedProxies.length === 0"
-                class="inline-flex items-center justify-center rounded-md bg-secondary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90 disabled:opacity-50">
+                class="inline-flex items-center justify-center rounded-md border border-stroke px-4 py-2 text-center font-medium hover:bg-gray">
                 <Download class="w-4 h-4 mr-2" />
                 Export Selected
               </button>
               <button
                 @click="verifySelected"
                 :disabled="selectedProxies.length === 0 || isVerifying"
-                class="inline-flex items-center justify-center rounded-md bg-warning px-4 py-2 text-center font-medium text-white hover:bg-opacity-90 disabled:opacity-50">
+                class="inline-flex items-center justify-center rounded-md border border-stroke px-4 py-2 text-center font-medium hover:bg-gray">
                 <RefreshCw
                   class="w-4 h-4 mr-2"
                   :class="{ 'animate-spin': isVerifying }" />
@@ -390,7 +390,7 @@
                     <div class="flex flex-col gap-1">
                       <button
                         @click="viewLogs(proxy.id)"
-                        class="text-primary hover:underline text-xs text-left">
+                        class="text-primary hover:underline text-xs">
                         IP Logs
                       </button>
                       <button
@@ -479,7 +479,7 @@
           </button>
           <button
             @click="saveColumnSettings"
-            class="rounded-md bg-primary px-4 py-2 text-white hover:bg-opacity-90">
+            class="rounded-md border border-stroke px-4 py-2 hover:bg-gray">
             Save
           </button>
         </div>
@@ -577,7 +577,7 @@
             </button>
             <button
               type="submit"
-              class="rounded-md bg-primary px-4 py-2 text-white hover:bg-opacity-90">
+              class="rounded-md border border-stroke px-4 py-2 hover:bg-gray">
               {{ showEditModal ? "Update" : "Create" }}
             </button>
           </div>
@@ -614,7 +614,7 @@
             <button
               type="submit"
               :disabled="!selectedFile"
-              class="rounded-md px-4 py-2 text-white hover:bg-opacity-90 disabled:opacity-50">
+              class="rounded-md border border-stroke px-4 py-2 hover:bg-gray">
               Import
             </button>
           </div>
