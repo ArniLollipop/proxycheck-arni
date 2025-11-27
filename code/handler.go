@@ -300,7 +300,6 @@ func (h handler) ImportProxies(c *gin.Context) error {
 		}
 
 		// Check for duplicates using EXISTS query instead of loading all records
-		key := fmt.Sprintf("%s:%s:%s", p.Ip, p.Port, p.Username)
 		var exists bool
 		h.db.Model(&Proxy{}).
 			Select("count(*) > 0").
@@ -646,10 +645,10 @@ func (h handler) GetProxyVisitLogs(c *gin.Context) {
 }
 
 func (h handler) GetFailureLogs(c *gin.Context) {
-	var filters FailureLogFilters
+	var filters ProxyFailureLogFilters
 
 	// Parse query parameters
-	filters.ProxyId = c.Query("proxy_id")
+	filters.ProxyID = c.Query("proxy_id")
 	filters.ErrorType = c.Query("error_type")
 	filters.SortField = c.Query("sort_field")
 
@@ -706,7 +705,7 @@ func (h handler) GetFailureStats(c *gin.Context) {
 	}
 
 	var failureLog ProxyFailureLog
-	stats, err := failureLog.GetStats(proxyId, h.db)
+	stats, err := GetFailureStats(h.db, proxyId, failureLog.Timestamp.Day())
 	if err != nil {
 		log.Printf("Error fetching failure stats for proxy %s: %v", proxyId, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve failure statistics"})

@@ -17,6 +17,17 @@ type ProxyFailureLog struct {
 	Latency   int       `json:"latency"` // Last known latency before failure
 }
 
+// ProxyFailureLogFilters represents filters for querying failure logs
+type ProxyFailureLogFilters struct {
+	ProxyID   string
+	ErrorType string
+	StartDate time.Time
+	EndDate   time.Time
+	Page      int
+	PageSize  int
+	SortField string
+}
+
 // TableName specifies the table name for ProxyFailureLog
 func (ProxyFailureLog) TableName() string {
 	return "proxy_failure_logs"
@@ -27,17 +38,6 @@ func (f *ProxyFailureLog) Save(db *gorm.DB) error {
 	return db.Clauses(clause.OnConflict{
 		UpdateAll: true,
 	}).Create(f).Error
-}
-
-// ProxyFailureLogFilters represents filters for querying failure logs
-type ProxyFailureLogFilters struct {
-	ProxyID   string
-	ErrorType string
-	StartDate time.Time
-	EndDate   time.Time
-	Page      int
-	PageSize  int
-	SortField string
 }
 
 // buildWhereProxyID builds a WHERE clause for proxy_id
