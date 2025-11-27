@@ -15,9 +15,6 @@ import (
 // Для точного измерения скорости рекомендуется использовать URL-адрес
 // для `settings.Url`, который отдает файл размером не менее нескольких мегабайт.
 func CheckSpeed(settings *Settings, proxy *Proxy, db *gorm.DB) (float64, float64, error) {
-
-	fmt.Println("checkSpeed")
-
 	client, err := newProxyClient(proxy, settings)
 	if err != nil {
 		return 0, 0, err
@@ -34,31 +31,26 @@ func CheckSpeed(settings *Settings, proxy *Proxy, db *gorm.DB) (float64, float64
 	upload := tg.ULSpeed.Mbps()
 	download := tg.DLSpeed.Mbps()
 
-	downloadKb := download * 1000
-	uploadKb := upload * 1000
+	// Store speed in Mbps (not Kbps)
+	proxy.Speed = int(download)
+	proxy.Upload = int(upload)
 
-
-	proxy.Speed = int(downloadKb);
-	proxy.Upload = int(uploadKb);
-	
 	hist := ProxySpeedLog{
 		Id:        uuid.NewString(),
 		ProxyId:   proxy.Id,
 		Timestamp: time.Now(),
-		Speed:     int(downloadKb),
-		Upload:    int(uploadKb),
+		Speed:     int(download),
+		Upload:    int(upload),
 	}
 	if err := hist.Save(db); err != nil {
-		log.Println("Error saving speed log:", err)
+		log.Printf("Error saving speed log for proxy %s:%s - %v", proxy.Ip, proxy.Port, err)
 	}
 
 	if err := proxy.Save(db); err != nil {
-		log.Println("Error saving proxy's speed log:", err)
+		log.Printf("Error saving proxy speed for %s:%s - %v", proxy.Ip, proxy.Port, err)
 	}
 
-	fmt.Println("Saved speed log:", tg.URL)
-
-	return downloadKb, uploadKb, nil
+	return download, upload, nil
 }
 
 func Ping(settings *Settings, proxy *Proxy) (int, error) {

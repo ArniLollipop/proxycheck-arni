@@ -8,11 +8,24 @@ type Settings struct {
 	ID                 uint   `gorm:"primaryKey" json:"-"` // Добавляем ID как первичный ключ
 	Url                string `json:"url"`
 	Timeout            int    `json:"timeout"`
-	Repeat             int    `json:"repeat"`
 	CheckIPInterval    int    `json:"checkIPInterval"`
 	SpeedCheckInterval int    `json:"speedCheckInterval"`
 	Username           string `json:"username"`
 	Password           string `json:"password"`
+	SkipSSLVerify      bool   `json:"skipSSLVerify"` // Allow configuring SSL verification
+
+	// Notification settings
+	TelegramEnabled      bool   `json:"telegramEnabled"`
+	TelegramToken        string `json:"telegramToken"`
+	TelegramChatID       string `json:"telegramChatID"`
+	NotifyOnDown         bool   `json:"notifyOnDown"`         // Notify when proxy goes down
+	NotifyOnRecovery     bool   `json:"notifyOnRecovery"`     // Notify when proxy recovers
+	NotifyOnIPChange     bool   `json:"notifyOnIPChange"`     // Notify when IP changes
+	NotifyOnIPStuck      bool   `json:"notifyOnIPStuck"`      // Notify when IP is stuck >24h
+	NotifyOnLowSpeed     bool   `json:"notifyOnLowSpeed"`     // Notify when speed is low
+	LowSpeedThreshold    int    `json:"lowSpeedThreshold"`    // Mbps threshold for low speed
+	NotifyDailySummary   bool   `json:"notifyDailySummary"`   // Send daily summary
+	DailySummaryTime     string `json:"dailySummaryTime"`     // Time for daily summary (HH:MM format)
 }
 
 func (s *Settings) Save(db *gorm.DB) error {
@@ -41,11 +54,21 @@ func SettingsDefault(db *gorm.DB) *Settings {
 			ID:                 1,
 			Url:                "https://google.com",
 			Timeout:            5,
-			Repeat:             15,
 			CheckIPInterval:    5,
 			SpeedCheckInterval: 15,
 			Username:           "default_username",
 			Password:           "default_password",
+			SkipSSLVerify:      true, // Default to true for backward compatibility
+			// Notification defaults
+			TelegramEnabled:    false,
+			NotifyOnDown:       true,
+			NotifyOnRecovery:   true,
+			NotifyOnIPChange:   false,
+			NotifyOnIPStuck:    true,
+			NotifyOnLowSpeed:   false,
+			LowSpeedThreshold:  10, // 10 Mbps
+			NotifyDailySummary: false,
+			DailySummaryTime:   "09:00",
 		}
 		err := stg.Save(db)
 		if err != nil {

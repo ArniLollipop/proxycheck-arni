@@ -15,8 +15,6 @@ func newProxyClient(proxy *Proxy, stg *Settings) (*http.Client, error) {
 	// Формируем URL прокси с данными для аутентификации, если они есть.
 	proxyStr := fmt.Sprintf("http://%s:%s", proxy.Ip, proxy.Port)
 
-	fmt.Println("NewProxyClient: ", proxyStr)
-
 	if proxy.Username != "" {
 		proxyStr = fmt.Sprintf("http://%s:%s@%s:%s", proxy.Username, proxy.Password, proxy.Ip, proxy.Port)
 	}
@@ -29,7 +27,7 @@ func newProxyClient(proxy *Proxy, stg *Settings) (*http.Client, error) {
 	// Создаем транспорт с настройками прокси.
 	transport := &http.Transport{
 		Proxy:           http.ProxyURL(proxyUrl),
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // Игнорируем проверку SSL-сертификата
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: stg.SkipSSLVerify},
 	}
 
 	// Создаем HTTP-клиент.

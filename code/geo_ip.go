@@ -14,7 +14,7 @@ type IpData struct {
 	ISP string
 }
 
-func (c GeoIPClient) ReadData(ip string) (data IpData, err error) {
+func (c *GeoIPClient) ReadData(ip string) (data IpData, err error) {
 	parsdIp := net.ParseIP(ip)
 	var isp_record struct {
 		Isp               string `maxminddb:"isp"`
@@ -26,6 +26,14 @@ func (c GeoIPClient) ReadData(ip string) (data IpData, err error) {
 	data.ISP = isp_record.Isp
 
 	return
+}
+
+// Close closes the GeoIP database connection
+func (c *GeoIPClient) Close() error {
+	if c.ispDb != nil {
+		return c.ispDb.Close()
+	}
+	return nil
 }
 
 func NewGeoIPClient(ispPatch string) (*GeoIPClient, error) {

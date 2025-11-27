@@ -304,9 +304,16 @@ func (p *ProxyVisitLogs) List(filters ProxyVisitLogsFilters, db *gorm.DB) ([]Pro
 	}
 
 	scopes := p.buildConditions(filters)
-	err := db.Model(p).Scopes(scopes...).Limit(limit).Offset(offset).Find(&logs).Error
+	countScopes := p.buildConditionsCount(filters)
+
 	var count int64
-	err = db.Model(p).Scopes(scopes...).Count(&count).Error
+	// Count first
+	if err := db.Model(p).Scopes(countScopes...).Count(&count).Error; err != nil {
+		return logs, 0, err
+	}
+
+	// Then fetch data
+	err := db.Model(p).Scopes(scopes...).Limit(limit).Offset(offset).Find(&logs).Error
 	return logs, count, err
 }
 
@@ -434,9 +441,16 @@ func (p *ProxySpeedLog) List(filters ProxySpeedLogFilters, db *gorm.DB) ([]Proxy
 	}
 
 	scopes := p.buildConditions(filters)
-	err := db.Model(p).Scopes(scopes...).Limit(limit).Offset(offset).Find(&logs).Error
+	countScopes := p.buildConditionsCount(filters)
+
 	var count int64
-	err = db.Model(p).Scopes(p.buildConditionsCount(filters)...).Count(&count).Error
+	// Count first
+	if err := db.Model(p).Scopes(countScopes...).Count(&count).Error; err != nil {
+		return logs, 0, err
+	}
+
+	// Then fetch data
+	err := db.Model(p).Scopes(scopes...).Limit(limit).Offset(offset).Find(&logs).Error
 	return logs, count, err
 }
 
@@ -562,10 +576,16 @@ func (p *ProxyIPLog) List(filters ProxyIPLogFilters, db *gorm.DB) ([]ProxyIPLog,
 	}
 
 	scopes := p.buildConditions(filters)
-	err := db.Model(p).Scopes(scopes...).Limit(limit).Offset(offset).Find(&logs).Error
+	countScopes := p.buildConditionsCount(filters)
 
 	var count int64
-	err = db.Model(p).Scopes(p.buildConditionsCount(filters)...).Count(&count).Error
+	// Count first
+	if err := db.Model(p).Scopes(countScopes...).Count(&count).Error; err != nil {
+		return logs, 0, err
+	}
+
+	// Then fetch data
+	err := db.Model(p).Scopes(scopes...).Limit(limit).Offset(offset).Find(&logs).Error
 	return logs, count, err
 }
 

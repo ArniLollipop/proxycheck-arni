@@ -28,7 +28,7 @@ func NoBufferMiddleware() gin.HandlerFunc {
 }
 
 func main() {
-	fmt.Println("started arni")
+	log.Println("Starting Proxy Checker application...")
 
 	// Initialize a single database
 	db, err := gorm.Open(sqlite.Open("database/proxy.db"), &gorm.Config{})
@@ -39,12 +39,20 @@ func main() {
 	quit := make(chan struct{})
 
 	// Auto-migrate all models
-	if err := db.AutoMigrate(&Proxy{}, &Settings{}, &ProxySpeedLog{}, &ProxyIPLog{}, &ProxyVisitLogs{}); err != nil {
+	if err := db.AutoMigrate(&Proxy{}, &Settings{}, &ProxySpeedLog{}, &ProxyIPLog{}, &ProxyVisitLogs{}, &ProxyFailureLog{}); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
 
 	// Initialize Settings from the single database
 	settings := SettingsDefault(db)
+
+	// Initialize Notification Service
+	notificationService := NewNotificationService(
+		settings.TelegramEnabled,
+		settings.TelegramToken,
+		settings.TelegramChatID,
+	)
+	log.Printf("Notification service initialized. Telegram enabled: %v", settings.TelegramEnabled)
 
 	// Канал для инициирования перезапуска из API
 	restartSignal := make(chan struct{}, 1)
@@ -64,8 +72,8 @@ func main() {
 	}
 
 	// Запускаем планировщик проверки IP в отдельной горутине.
-	go StartIPCheckScheduler(&wg, quit, db, settings, geoIP)
-	go StartHealthCheckScheduler(&wg, quit, db, settings)
+	go StartIPCheckScheduler(&wg, quit, db, settings, geoIP, notificationService)
+	go StartHealthCheckScheduler(&wg, quit, db, settings, notificationService)
 
 	// Create handler instance
 	h := handler{
@@ -112,20 +120,22 @@ func main() {
 	}
 	
 	router.POST("api/import", func(c *gin.Context) {
-    // Тут вызываем ваш существующий ImportProxies
-    if msg := h.ImportProxies(c); msg == "" {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
+		// Import proxies and run checks if successful
+		if err := h.ImportProxies(c); err != nil {
+			// Error response is already handled in ImportProxies
+			return
+		}
 
-		go RunSingleIPCheck(db, settings, geoIP)
-		go RunSingleHealthCheck(db, settings, geoIP)
-		
+		go RunSingleIPCheck(db, settings, geoIP, notificationService)
+		go RunSingleHealthCheck(db, settings, notificationService)
 	})
 	router.GET("/api/speedLogs", h.GetSpeedLogs)
 	router.GET("/api/ipLogs", h.GetProxyIPLogs)
 	router.POST("/api/proxyVisits", h.CreateProxyVisitLog)
 	router.GET("/api/proxyVisits", h.GetProxyVisitLogs)
+	router.GET("/api/failureLogs", h.GetFailureLogs)
+	router.GET("/api/failureStats/:id", h.GetFailureStats)
+	router.POST("/api/testNotification", h.TestNotification)
 
 	// Handle SPA routing (Vue Router history mode)
 	router.NoRoute(func(c *gin.Context) {
@@ -171,11 +181,10 @@ func main() {
 	close(quit)
 	wg.Wait() // Ожидаем завершения всех горутин.
 
+	// Cleanup GeoIP client
+	if err := geoIP.Close(); err != nil {
+		log.Printf("Error closing GeoIP client: %v", err)
+	}
+
 	log.Println("Server exiting")
 }
-
-//Speed - почему килабити
-// Пароль - спраятать
-// IP - local ip
-// Import - точно также как и экспорт
-// Дати не работают

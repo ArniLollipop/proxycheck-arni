@@ -21,45 +21,54 @@ type IP struct {
 func RealIp(stg *Settings, proxy *Proxy, db *gorm.DB, geoIPClient *GeoIPClient) (string, string, string, error) {
 	client, err := newProxyClient(proxy, stg)
 	if err != nil {
-		log.Println("Error creating proxy client:", err)
-		return "", "", "", nil
+		log.Printf("Error creating proxy client for %s:%s - %v", proxy.Ip, proxy.Port, err)
+		return "", "", "", err
 	}
 
 	rsp, err := client.Get("https://api.myip.com")
 	if err != nil {
-		log.Println(err)
-		return "", "", "", nil
+		log.Printf("Error getting real IP for %s:%s - %v", proxy.Ip, proxy.Port, err)
+		return "", "", "", err
 	}
 	defer rsp.Body.Close()
 
 	ip := &IP{}
-	json.NewDecoder(rsp.Body).Decode(ip)
-
-	orerator, err := geoIPClient.ReadData(ip.Ip)
-	if err != nil {
-		log.Println("Error reading geoIP data:", err)
+	if err := json.NewDecoder(rsp.Body).Decode(ip); err != nil {
+		log.Printf("Error decoding IP response for %s:%s - %v", proxy.Ip, proxy.Port, err)
+		return "", "", "", err
 	}
-	op := orerator.ISP
+
+	operator, err := geoIPClient.ReadData(ip.Ip)
+	if err != nil {
+		log.Printf("Error reading geoIP data for %s - %v", ip.Ip, err)
+		// Continue with empty operator instead of failing
+	}
+	op := operator.ISP
 	if strings.Contains(strings.ToLower(op), "moldtelecom") {
 		op = "Moldtelecom"
 	}
 
-	// get last timestamp 
-	var pIpLog ProxyIPLog;
-	lastLog, _ := pIpLog.LastByTimestamp(proxy.Id, db)
-
-	stack := false
-	if lastLog != nil {
-		// Если IP не менялся более 12 часов
-		if time.Since(lastLog.Timestamp) > 12*time.Hour && lastLog.Ip == ip.Ip {
-			stack = true
-		}
+	// Get last IP log entry
+	var pIpLog ProxyIPLog
+	lastLog, err := pIpLog.LastByTimestamp(proxy.Id, db)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		log.Printf("Error fetching last IP log for proxy %s - %v", proxy.Id, err)
 	}
-	
-	fmt.Println("proxy.RealIP: ", ip.Ip, proxy.Ip)
-	
-	if lastLog != nil && ip.Ip != "" {
-		proxy.LastIPChange = time.Now();
+
+	// Detect if IP is stuck (not changed for more than 12 hours)
+	stack := false
+	if lastLog != nil && lastLog.Ip == ip.Ip && time.Since(lastLog.Timestamp) > 12*time.Hour {
+		stack = true
+		log.Printf("Warning: IP stuck for proxy %s:%s - Same IP %s for >12 hours", proxy.Ip, proxy.Port, ip.Ip)
+	}
+
+	// Update proxy Stack field
+	proxy.Stack = stack
+
+	// Save IP log only if IP actually changed
+	if lastLog != nil && ip.Ip != "" && lastLog.Ip != ip.Ip {
+		proxy.LastIPChange = time.Now()
+		proxy.Stack = false // IP changed, so not stuck anymore
 
 		hist := ProxyIPLog{
 			Id:         uuid.NewString(),
@@ -68,15 +77,20 @@ func RealIp(stg *Settings, proxy *Proxy, db *gorm.DB, geoIPClient *GeoIPClient) 
 			Ip:         ip.Ip,
 			OldIp:      lastLog.Ip,
 			Country:    ip.Country,
-			OldCountry: proxy.RealCountry,
+			OldCountry: lastLog.Country,
 			ISP:        op,
-			OldISP:     op,
+			OldISP:     lastLog.ISP,
+			Stack:      false, // IP changed, so not stuck
 		}
 		if err := hist.Save(db); err != nil {
-			log.Println("Error saving IP log:", err)
+			log.Printf("Error saving IP log for proxy %s - %v", proxy.Id, err)
+		} else {
+			log.Printf("IP changed for proxy %s:%s: %s -> %s", proxy.Ip, proxy.Port, lastLog.Ip, ip.Ip)
 		}
-	} else if ip.Ip != "" && ip.Ip != proxy.Ip {
+	} else if lastLog == nil && ip.Ip != "" {
+		// First time checking this proxy - create initial log
 		proxy.LastIPChange = time.Now()
+		proxy.Stack = false
 		hist := ProxyIPLog{
 			Id:         uuid.NewString(),
 			ProxyId:    proxy.Id,
@@ -84,17 +98,17 @@ func RealIp(stg *Settings, proxy *Proxy, db *gorm.DB, geoIPClient *GeoIPClient) 
 			Ip:         ip.Ip,
 			OldIp:      proxy.Ip,
 			Country:    ip.Country,
-			OldCountry: proxy.RealCountry,
+			OldCountry: "",
 			ISP:        op,
-			OldISP:     op,
-			Stack: 			stack,
+			OldISP:     "",
+			Stack:      false,
 		}
 		if err := hist.Save(db); err != nil {
-			log.Println("Error saving IP log:", err)
+			log.Printf("Error saving initial IP log for proxy %s - %v", proxy.Id, err)
 		}
-	} 
+	}
 
-	return ip.Ip, ip.Country, orerator.ISP, nil
+	return ip.Ip, ip.Country, operator.ISP, nil
 }
 
 func GetOutboundIP() string {

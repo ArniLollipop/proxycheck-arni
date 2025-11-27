@@ -48,20 +48,20 @@ type ProxyRequest struct {
 func (h handler) createAndCheckProxy(p *Proxy) error {
 	latency, err := Ping(h.settings, p)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Ping failed for proxy %s:%s - %v", p.Ip, p.Port, err)
 		p.LastStatus = 2 // 2 - failed
 		p.Failures = 1
+		p.LastLatency = 0
 	} else {
 		p.LastStatus = 1 // 1 - success
+		p.LastLatency = latency
+		p.Failures = 0
 	}
-	if err != nil {
-		log.Println(err)
-		p.LastStatus = 2 // 2 - failed
-		p.Failures = 1
-	}
-	p.LastLatency = latency
 
-	realIp, realCountry, realOperator, _ := RealIp(h.settings, p, h.db, h.geoIPClient)
+	realIp, realCountry, realOperator, err := RealIp(h.settings, p, h.db, h.geoIPClient)
+	if err != nil {
+		log.Printf("Failed to get real IP for proxy %s:%s - %v", p.Ip, p.Port, err)
+	}
 
 	p.RealIP = realIp
 	p.RealCountry = realCountry
@@ -123,7 +123,11 @@ func (h handler) UpdateProxy(c *gin.Context) {
 	p.Phone = req.Phone
 	p.Name = req.Name
 
-	p.Save(h.db);
+	if err := p.Save(h.db); err != nil {
+		log.Printf("Failed to save updated proxy %s:%s - %v", p.Ip, p.Port, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save proxy"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"data": p})
 }
@@ -248,17 +252,17 @@ func (h handler) VerifyBatch(c *gin.Context) {
 	flusher.Flush()
 }
 
-func (h handler) ImportProxies(c *gin.Context) (message string){
+func (h handler) ImportProxies(c *gin.Context) error {
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File is required"})
-		return ""
+		return err
 	}
 
 	openedFile, err := file.Open()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
-		return ""
+		return err
 	}
 	defer openedFile.Close()
 
@@ -266,15 +270,6 @@ func (h handler) ImportProxies(c *gin.Context) (message string){
 	importedCount := 0
 	failedLines := 0
 	skippedDuplicates := 0
-
-	var existingProxies []Proxy
-	h.db.Select("ip, port, username").Find(&existingProxies)
-	
-	existingMap := make(map[string]bool)
-	for _, ep := range existingProxies {
-		key := fmt.Sprintf("%s:%s:%s", ep.Ip, ep.Port, ep.Username)
-		existingMap[key] = true
-	}
 
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -296,7 +291,7 @@ func (h handler) ImportProxies(c *gin.Context) (message string){
 
 		p := Proxy{}
 		p.Parse(proxyLine)
-		
+
 		if proxyName != "" {
 			p.Name = proxyName
 		}
@@ -304,8 +299,15 @@ func (h handler) ImportProxies(c *gin.Context) (message string){
 			p.Contacts = proxyContacts
 		}
 
+		// Check for duplicates using EXISTS query instead of loading all records
 		key := fmt.Sprintf("%s:%s:%s", p.Ip, p.Port, p.Username)
-		if existingMap[key] {
+		var exists bool
+		h.db.Model(&Proxy{}).
+			Select("count(*) > 0").
+			Where("ip = ? AND port = ? AND username = ?", p.Ip, p.Port, p.Username).
+			Find(&exists)
+
+		if exists {
 			log.Printf("Skipping duplicate proxy %s:%s", p.Ip, p.Port)
 			skippedDuplicates++
 			continue
@@ -318,8 +320,6 @@ func (h handler) ImportProxies(c *gin.Context) (message string){
 			failedLines++
 		} else {
 			importedCount++
-			existingMap[key] = true 
-			
 			log.Printf("Imported proxy %s:%s with name: %s, contacts: %s", p.Ip, p.Port, proxyName, proxyContacts)
 		}
 	}
@@ -327,20 +327,20 @@ func (h handler) ImportProxies(c *gin.Context) (message string){
 	if err := scanner.Err(); err != nil {
 		log.Println("Error reading file for import:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading file"})
-		return
+		return err
 	}
 
-	msg := fmt.Sprintf("Import finished. Imported: %d, Skipped: %d, Failed: %d", 
-			importedCount, skippedDuplicates, failedLines)
+	msg := fmt.Sprintf("Import finished. Imported: %d, Skipped: %d, Failed: %d",
+		importedCount, skippedDuplicates, failedLines)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": msg,
+		"message":       msg,
 		"importedCount": importedCount,
 		"skippedCount":  skippedDuplicates,
 		"failedCount":   failedLines,
 	})
 
-	return msg
+	return nil
 }
 
 func (h handler) Delete(c *gin.Context) {
@@ -585,13 +585,15 @@ func (h handler) GetProxyVisitLogs(c *gin.Context) {
 	var err error
 
 	filters.ProxyId = c.Query("proxy_id")
+	// ProxyId in filters should be the actual UUID, not username
+	// No need to convert - just validate if provided
 	if filters.ProxyId != "" {
 		proxy := &Proxy{}
-		if err = h.db.Where("id =?", filters.ProxyId).First(proxy).Error; err != nil {
+		if err = h.db.Where("id = ?", filters.ProxyId).First(proxy).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Proxy not found"})
 			return
 		}
-		filters.ProxyId = proxy.Username
+		// Keep the original proxy_id (UUID)
 	}
 	filters.SourceIP = c.Query("source_ip")
 	filters.TargetIP = c.Query("target_ip")
@@ -641,4 +643,110 @@ func (h handler) GetProxyVisitLogs(c *gin.Context) {
 		"data":  logs,
 		"total": count,
 	})
+}
+
+func (h handler) GetFailureLogs(c *gin.Context) {
+	var filters FailureLogFilters
+
+	// Parse query parameters
+	filters.ProxyId = c.Query("proxy_id")
+	filters.ErrorType = c.Query("error_type")
+	filters.SortField = c.Query("sort_field")
+
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		return
+	}
+	filters.Page = page
+
+	pageSize, err := strconv.Atoi(c.DefaultQuery("page_size", "50"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page size"})
+		return
+	}
+	filters.PageSize = pageSize
+
+	const layout = "2006-01-02"
+	if startDateStr := c.Query("start_date"); startDateStr != "" {
+		filters.StartDate, err = time.Parse(layout, startDateStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start_date format. Use YYYY-MM-DD."})
+			return
+		}
+	}
+
+	if endDateStr := c.Query("end_date"); endDateStr != "" {
+		filters.EndDate, err = time.Parse(layout, endDateStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end_date format. Use YYYY-MM-DD."})
+			return
+		}
+	}
+
+	var failureLog ProxyFailureLog
+	logs, total, err := failureLog.List(filters, h.db)
+	if err != nil {
+		log.Println("Error fetching failure logs:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve failure logs"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  logs,
+		"total": total,
+	})
+}
+
+func (h handler) GetFailureStats(c *gin.Context) {
+	proxyId := c.Param("id")
+	if proxyId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Proxy ID is required"})
+		return
+	}
+
+	var failureLog ProxyFailureLog
+	stats, err := failureLog.GetStats(proxyId, h.db)
+	if err != nil {
+		log.Printf("Error fetching failure stats for proxy %s: %v", proxyId, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve failure statistics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": stats})
+}
+
+func (h handler) TestNotification(c *gin.Context) {
+	type TestNotificationRequest struct {
+		Message string `json:"message"`
+	}
+
+	var req TestNotificationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Message is required"})
+		return
+	}
+
+	// Create notification service from current settings
+	notifier := NewNotificationService(
+		h.settings.TelegramEnabled,
+		h.settings.TelegramToken,
+		h.settings.TelegramChatID,
+	)
+
+	message := fmt.Sprintf(
+		"🧪 <b>Test Notification</b>\n\n"+
+			"<b>Message:</b> %s\n"+
+			"<b>Time:</b> %s",
+		req.Message,
+		time.Now().Format("2006-01-02 15:04:05"),
+	)
+
+	if err := notifier.SendTelegram(message); err != nil {
+		log.Printf("Failed to send test notification: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to send notification: %v", err)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Test notification sent successfully"})
 }
