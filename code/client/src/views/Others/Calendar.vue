@@ -2,7 +2,7 @@
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div
-      class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
+      class="rounded-2xl border border-gray-200 bg-white"
     >
       <div class="custom-calendar">
         <FullCalendar ref="calendarRef" class="min-h-screen" :options="calendarOptions" />
@@ -12,38 +12,38 @@
       <Modal v-if="isOpen" @close="closeModal = false">
         <template #body>
           <div
-            class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11"
+            class="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 lg:p-11"
           >
             <h5
-              class="mb-2 font-semibold text-gray-800 modal-title text-theme-xl dark:text-white/90 lg:text-2xl"
+              class="mb-2 font-semibold text-gray-800 modal-title text-theme-xl lg:text-2xl"
             >
               {{ selectedEvent ? 'Edit Event' : 'Add Event' }}
             </h5>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+            <p class="text-sm text-gray-500">
               Plan your next big moment: schedule or edit an event to stay on track
             </p>
 
             <div class="mt-8">
               <div>
-                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                <label class="mb-1.5 block text-sm font-medium text-gray-700">
                   Event Title
                 </label>
                 <input
                   v-model="eventTitle"
                   type="text"
-                  class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  class=" h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
                 />
               </div>
 
               <div class="mt-6">
-                <label class="block mb-4 text-sm font-medium text-gray-700 dark:text-gray-400">
+                <label class="block mb-4 text-sm font-medium text-gray-700">
                   Event Color
                 </label>
                 <div class="flex flex-wrap items-center gap-4 sm:gap-5">
                   <div v-for="(value, key) in calendarsEvents" :key="key" class="n-chk">
                     <div :class="`form-check form-check-${value} form-check-inline`">
                       <label
-                        class="flex items-center text-sm text-gray-700 form-check-label dark:text-gray-400"
+                        class="flex items-center text-sm text-gray-700 form-check-label"
                         :for="`modal${key}`"
                       >
                         <span class="relative">
@@ -56,9 +56,9 @@
                             class="sr-only form-check-input"
                           />
                           <span
-                            class="flex items-center justify-center w-5 h-5 mr-2 border border-gray-300 rounded-full box dark:border-gray-700"
+                            class="flex items-center justify-center w-5 h-5 mr-2 border border-gray-300 rounded-full box"
                           >
-                            <span class="w-2 h-2 bg-white rounded-full dark:bg-transparent"></span>
+                            <span class="w-2 h-2 bg-white rounded-full"></span>
                           </span>
                         </span>
                         {{ key }}
@@ -69,24 +69,24 @@
               </div>
 
               <div class="mt-6">
-                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                <label class="mb-1.5 block text-sm font-medium text-gray-700">
                   Enter Start Date
                 </label>
                 <input
                   v-model="eventStartDate"
                   type="date"
-                  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  class=" h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
                 />
               </div>
 
               <div class="mt-6">
-                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                <label class="mb-1.5 block text-sm font-medium text-gray-700">
                   Enter End Date
                 </label>
                 <input
                   v-model="eventEndDate"
                   type="date"
-                  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  class=" h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
                 />
               </div>
             </div>
@@ -94,7 +94,7 @@
             <div class="flex items-center gap-3 mt-6 modal-footer sm:justify-end">
               <button
                 @click="closeModal"
-                class="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
+                class="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
               >
                 Close
               </button>
@@ -121,35 +121,35 @@
         <div v-if="isOpen" class="modal">
           <div >
             <h5
-              class="mb-2 font-semibold text-gray-800 modal-title text-theme-xl dark:text-white/90 lg:text-2xl"
+              class="mb-2 font-semibold text-gray-800 modal-title text-theme-xl lg:text-2xl"
             >
               {{ selectedEvent ? 'Edit Event' : 'Add Event' }}
             </h5>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+            <p class="text-sm text-gray-500">
               Plan your next big moment: schedule or edit an event to stay on track
             </p>
 
             <div class="mt-8">
               <div>
-                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                <label class="mb-1.5 block text-sm font-medium text-gray-700">
                   Event Title
                 </label>
                 <input
                   v-model="eventTitle"
                   type="text"
-                  class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  class=" h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
                 />
               </div>
 
               <div class="mt-6">
-                <label class="block mb-4 text-sm font-medium text-gray-700 dark:text-gray-400">
+                <label class="block mb-4 text-sm font-medium text-gray-700">
                   Event Color
                 </label>
                 <div class="flex flex-wrap items-center gap-4 sm:gap-5">
                   <div v-for="(value, key) in calendarsEvents" :key="key" class="n-chk">
                     <div :class="`form-check form-check-${value} form-check-inline`">
                       <label
-                        class="flex items-center text-sm text-gray-700 form-check-label dark:text-gray-400"
+                        class="flex items-center text-sm text-gray-700 form-check-label"
                         :for="`modal${key}`"
                       >
                         <span class="relative">
@@ -162,9 +162,9 @@
                             class="sr-only form-check-input"
                           />
                           <span
-                            class="flex items-center justify-center w-5 h-5 mr-2 border border-gray-300 rounded-full box dark:border-gray-700"
+                            class="flex items-center justify-center w-5 h-5 mr-2 border border-gray-300 rounded-full box"
                           >
-                            <span class="w-2 h-2 bg-white rounded-full dark:bg-transparent"></span>
+                            <span class="w-2 h-2 bg-white rounded-full"></span>
                           </span>
                         </span>
                         {{ key }}
@@ -175,24 +175,24 @@
               </div>
 
               <div class="mt-6">
-                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                <label class="mb-1.5 block text-sm font-medium text-gray-700">
                   Enter Start Date
                 </label>
                 <input
                   v-model="eventStartDate"
                   type="date"
-                  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  class=" h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
                 />
               </div>
 
               <div class="mt-6">
-                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                <label class="mb-1.5 block text-sm font-medium text-gray-700">
                   Enter End Date
                 </label>
                 <input
                   v-model="eventEndDate"
                   type="date"
-                  class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                  class=" h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
                 />
               </div>
             </div>
@@ -200,7 +200,7 @@
             <div class="flex items-center gap-3 mt-6 modal-footer sm:justify-end">
               <button
                 @click="closeModal"
-                class="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
+                class="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
               >
                 Close
               </button>

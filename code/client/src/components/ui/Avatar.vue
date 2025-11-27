@@ -4,7 +4,7 @@
     <span
       v-if="status !== 'none'"
       :class="[
-        'absolute bottom-0 right-0 rounded-full border-[1.5px] border-white dark:border-gray-900',
+        'absolute bottom-0 right-0 rounded-full border-[1.5px] border-white',
         statusSizeClasses[size],
         statusColorClasses[status] || '',
       ]"

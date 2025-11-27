@@ -31,6 +31,22 @@ const router = createRouter({
       },
     },
     {
+      path: '/ip-logs',
+      name: 'IP Logs',
+      component: () => import('../views/ProxyIPLogs.vue'),
+      meta: {
+        title: 'IP Change Logs',
+      },
+    },
+    {
+      path: '/speed-logs',
+      name: 'Speed Logs',
+      component: () => import('../views/ProxySpeedLogs.vue'),
+      meta: {
+        title: 'Speed Test Logs',
+      },
+    },
+    {
       path: '/calendar',
       name: 'Calendar',
       component: () => import('../views/Others/Calendar.vue'),

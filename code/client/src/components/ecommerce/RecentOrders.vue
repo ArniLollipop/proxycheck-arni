@@ -1,18 +1,18 @@
 <template>
   <div
-    class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6"
+    class="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 sm:px-6"
   >
     <div class="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Recent Orders</h3>
+        <h3 class="text-lg font-semibold text-gray-800">Recent Orders</h3>
       </div>
 
       <div class="flex items-center gap-3">
         <button
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800"
         >
           <svg
-            class="stroke-current fill-white dark:fill-gray-800"
+            class="stroke-current fill-white"
             width="20"
             height="20"
             viewBox="0 0 20 20"
@@ -51,7 +51,7 @@
         </button>
 
         <button
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800"
         >
           See all
         </button>
@@ -61,18 +61,18 @@
     <div class="max-w-full overflow-x-auto custom-scrollbar">
       <table class="min-w-full">
         <thead>
-          <tr class="border-t border-gray-100 dark:border-gray-800">
+          <tr class="border-t border-gray-100">
             <th class="py-3 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Products</p>
+              <p class="font-medium text-gray-500 text-theme-xs">Products</p>
             </th>
             <th class="py-3 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Category</p>
+              <p class="font-medium text-gray-500 text-theme-xs">Category</p>
             </th>
             <th class="py-3 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Price</p>
+              <p class="font-medium text-gray-500 text-theme-xs">Price</p>
             </th>
             <th class="py-3 text-left">
-              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Status</p>
+              <p class="font-medium text-gray-500 text-theme-xs">Status</p>
             </th>
           </tr>
         </thead>
@@ -80,7 +80,7 @@
           <tr
             v-for="(product, index) in products"
             :key="index"
-            class="border-t border-gray-100 dark:border-gray-800"
+            class="border-t border-gray-100"
           >
             <td class="py-3 whitespace-nowrap">
               <div class="flex items-center gap-3">
@@ -88,30 +88,30 @@
                   <img :src="product.image" :alt="product.name" />
                 </div>
                 <div>
-                  <p class="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                  <p class="font-medium text-gray-800 text-theme-sm">
                     {{ product.name }}
                   </p>
-                  <span class="text-gray-500 text-theme-xs dark:text-gray-400"
+                  <span class="text-gray-500 text-theme-xs"
                     >{{ product.variants }} Variants</span
                   >
                 </div>
               </div>
             </td>
             <td class="py-3 whitespace-nowrap">
-              <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ product.category }}</p>
+              <p class="text-gray-500 text-theme-sm">{{ product.category }}</p>
             </td>
             <td class="py-3 whitespace-nowrap">
-              <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ product.price }}</p>
+              <p class="text-gray-500 text-theme-sm">{{ product.price }}</p>
             </td>
             <td class="py-3 whitespace-nowrap">
               <span
                 :class="{
                   'rounded-full px-2 py-0.5 text-theme-xs font-medium': true,
-                  'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500':
+                  'bg-success-50 text-success-600':
                     product.status === 'Delivered',
-                  'bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400':
+                  'bg-warning-50 text-warning-600':
                     product.status === 'Pending',
-                  'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500':
+                  'bg-error-50 text-error-600':
                     product.status === 'Canceled',
                 }"
               >

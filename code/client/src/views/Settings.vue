@@ -8,17 +8,17 @@
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
               <label
-                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                class="mb-2 block text-sm font-medium text-black"
                 >Check URL</label
               >
               <input
                 v-model="settings.url"
                 type="text"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none" />
             </div>
             <div>
               <label
-                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                class="mb-2 block text-sm font-medium text-black"
                 >Timeout (seconds)</label
               >
               <input
@@ -26,55 +26,55 @@
                 type="number"
                 min="1"
                 max="300"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none" />
             </div>
             <div>
               <label
-                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                class="mb-2 block text-sm font-medium text-black"
                 >IP Check Interval (minutes)</label
               >
               <input
                 v-model.number="settings.checkIPInterval"
                 type="number"
                 min="1"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none" />
               <p class="mt-1 text-xs text-bodydark">
                 How often to check proxy IPs (recommended: 15-30 min)
               </p>
             </div>
             <div>
               <label
-                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                class="mb-2 block text-sm font-medium text-black"
                 >Speed Check Interval (minutes)</label
               >
               <input
                 v-model.number="settings.speedCheckInterval"
                 type="number"
                 min="1"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none" />
               <p class="mt-1 text-xs text-bodydark">
                 How often to check proxy speeds (recommended: 60-360 min)
               </p>
             </div>
             <div>
               <label
-                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                class="mb-2 block text-sm font-medium text-black"
                 >Username</label
               >
               <input
                 v-model="settings.username"
                 type="text"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none" />
             </div>
             <div>
               <label
-                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                class="mb-2 block text-sm font-medium text-black"
                 >Password</label
               >
               <input
                 v-model="settings.password"
                 type="password"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none" />
             </div>
             <div class="flex items-center">
               <input
@@ -84,7 +84,7 @@
                 class="mr-2 cursor-pointer" />
               <label
                 for="skipSSL"
-                class="text-sm font-medium text-black dark:text-white cursor-pointer">
+                class="text-sm font-medium text-black cursor-pointer">
                 Skip SSL Verification
               </label>
             </div>
@@ -96,7 +96,7 @@
           <div class="space-y-6">
             <div class="flex items-center justify-between">
               <div>
-                <h4 class="font-medium text-black dark:text-white">
+                <h4 class="font-medium text-black">
                   Enable Telegram Notifications
                 </h4>
                 <p class="text-sm text-bodydark">
@@ -109,7 +109,7 @@
                   type="checkbox"
                   class="peer sr-only" />
                 <div
-                  class="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:border-gray-600 dark:bg-gray-700 dark:peer-focus:ring-blue-800"></div>
+                  class="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300"></div>
               </label>
             </div>
 
@@ -117,28 +117,28 @@
               <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label
-                    class="mb-2 block text-sm font-medium text-black dark:text-white"
+                    class="mb-2 block text-sm font-medium text-black"
                     >Bot Token</label
                   >
                   <input
                     v-model="settings.telegramToken"
                     type="text"
                     placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
-                    class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
+                    class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none" />
                   <p class="mt-1 text-xs text-bodydark">
                     Get from @BotFather on Telegram
                   </p>
                 </div>
                 <div>
                   <label
-                    class="mb-2 block text-sm font-medium text-black dark:text-white"
+                    class="mb-2 block text-sm font-medium text-black"
                     >Chat ID</label
                   >
                   <input
                     v-model="settings.telegramChatID"
                     type="text"
                     placeholder="123456789 or -1001234567890"
-                    class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
+                    class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none" />
                   <p class="mt-1 text-xs text-bodydark">
                     Your chat ID or channel ID
                   </p>
@@ -146,8 +146,8 @@
               </div>
 
               <div
-                class="rounded-lg border border-stroke p-4 dark:border-strokedark">
-                <h5 class="mb-3 font-medium text-black dark:text-white">
+                class="rounded-lg border border-stroke p-4">
+                <h5 class="mb-3 font-medium text-black">
                   Notification Types
                 </h5>
                 <div class="space-y-3">
@@ -157,7 +157,7 @@
                       type="checkbox"
                       class="mr-3 h-5 w-5 cursor-pointer" />
                     <div>
-                      <span class="font-medium text-black dark:text-white"
+                      <span class="font-medium text-black"
                         >Proxy Down</span
                       >
                       <p class="text-xs text-bodydark">
@@ -171,7 +171,7 @@
                       type="checkbox"
                       class="mr-3 h-5 w-5 cursor-pointer" />
                     <div>
-                      <span class="font-medium text-black dark:text-white"
+                      <span class="font-medium text-black"
                         >Proxy Recovery</span
                       >
                       <p class="text-xs text-bodydark">
@@ -185,7 +185,7 @@
                       type="checkbox"
                       class="mr-3 h-5 w-5 cursor-pointer" />
                     <div>
-                      <span class="font-medium text-black dark:text-white"
+                      <span class="font-medium text-black"
                         >IP Change</span
                       >
                       <p class="text-xs text-bodydark">
@@ -199,7 +199,7 @@
                       type="checkbox"
                       class="mr-3 h-5 w-5 cursor-pointer" />
                     <div>
-                      <span class="font-medium text-black dark:text-white"
+                      <span class="font-medium text-black"
                         >IP Stuck</span
                       >
                       <p class="text-xs text-bodydark">
@@ -215,7 +215,7 @@
                     <div class="flex-1">
                       <div class="flex items-center justify-between">
                         <div>
-                          <span class="font-medium text-black dark:text-white"
+                          <span class="font-medium text-black"
                             >Low Speed</span
                           >
                           <p class="text-xs text-bodydark">
@@ -228,7 +228,7 @@
                           type="number"
                           min="1"
                           max="1000"
-                          class="ml-4 w-20 rounded-md border border-stroke px-2 py-1 text-sm focus:border-primary focus:outline-none disabled:opacity-50 dark:border-strokedark dark:bg-meta-4" />
+                          class="ml-4 w-20 rounded-md border border-stroke px-2 py-1 text-sm focus:border-primary focus:outline-none disabled:opacity-50" />
                         <span class="ml-2 text-sm text-bodydark">Mbps</span>
                       </div>
                     </div>
@@ -241,7 +241,7 @@
                     <div class="flex-1">
                       <div class="flex items-center justify-between">
                         <div>
-                          <span class="font-medium text-black dark:text-white"
+                          <span class="font-medium text-black"
                             >Daily Summary</span
                           >
                           <p class="text-xs text-bodydark">
@@ -252,7 +252,7 @@
                           v-model="settings.dailySummaryTime"
                           :disabled="!settings.notifyDailySummary"
                           type="time"
-                          class="ml-4 rounded-md border border-stroke px-2 py-1 text-sm focus:border-primary focus:outline-none disabled:opacity-50 dark:border-strokedark dark:bg-meta-4" />
+                          class="ml-4 rounded-md border border-stroke px-2 py-1 text-sm focus:border-primary focus:outline-none disabled:opacity-50" />
                       </div>
                     </div>
                   </label>

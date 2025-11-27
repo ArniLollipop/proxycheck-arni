@@ -4,7 +4,7 @@
       <img
         :src="image.src"
         :alt="image.alt"
-        class="w-full border border-gray-200 rounded-xl dark:border-gray-800"
+        class="w-full border border-gray-200 rounded-xl"
       />
     </div>
   </div>

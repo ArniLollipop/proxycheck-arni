@@ -2,39 +2,39 @@
   <div class="space-y-6">
     <!-- Text Input -->
     <div>
-      <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+      <label class="mb-1.5 block text-sm font-medium text-gray-700">
         Input
       </label>
       <input
         type="text"
         v-model="formData.input"
-        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+        class=" h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
       />
     </div>
 
     <!-- Input with Placeholder -->
     <div>
-      <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+      <label class="mb-1.5 block text-sm font-medium text-gray-700">
         Input with Placeholder
       </label>
       <input
         type="text"
         v-model="formData.inputWithPlaceholder"
         placeholder="info@gmail.com"
-        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+        class=" h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
       />
     </div>
 
     <!-- Select Input -->
     <div>
-      <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+      <label class="mb-1.5 block text-sm font-medium text-gray-700">
         Select Input
       </label>
       <div class="relative z-20 bg-transparent">
         <select
           v-model="formData.selectInput"
-          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-          :class="{ 'text-gray-800 dark:text-white/90': formData.selectInput }"
+          class=" h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+          :class="{ 'text-gray-800': formData.selectInput }"
         >
           <option value="" disabled selected>Select Option</option>
           <option value="marketing">Marketing</option>
@@ -42,7 +42,7 @@
           <option value="development">Development</option>
         </select>
         <span
-          class="absolute z-30 text-gray-500 -translate-y-1/2 pointer-events-none right-4 top-1/2 dark:text-gray-400"
+          class="absolute z-30 text-gray-500 -translate-y-1/2 pointer-events-none right-4 top-1/2"
         >
           <svg
             class="stroke-current"
@@ -66,7 +66,7 @@
 
     <!-- Password Input -->
     <div>
-      <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+      <label class="mb-1.5 block text-sm font-medium text-gray-700">
         Password Input
       </label>
       <div class="relative">
@@ -74,7 +74,7 @@
           :type="showPassword ? 'text' : 'password'"
           v-model="formData.password"
           placeholder="Enter your password"
-          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+          class=" h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
         />
         <span
           @click="showPassword = !showPassword"
@@ -82,7 +82,7 @@
         >
           <svg
             v-if="!showPassword"
-            class="fill-gray-500 dark:fill-gray-400"
+            class="fill-gray-500"
             width="20"
             height="20"
             viewBox="0 0 20 20"
@@ -97,7 +97,7 @@
           </svg>
           <svg
             v-else
-            class="fill-gray-500 dark:fill-gray-400"
+            class="fill-gray-500"
             width="20"
             height="20"
             viewBox="0 0 20 20"
@@ -116,18 +116,18 @@
 
     <!-- Date Picker Input -->
     <div>
-      <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+      <label class="mb-1.5 block text-sm font-medium text-gray-700">
         Date Picker Input
       </label>
       <div class="relative">
         <flat-pickr
           v-model="date"
           :config="flatpickrConfig"
-          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+          class=" h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
           placeholder="Select date"
         />
         <span
-          class="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400"
+          class="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2"
         >
           <svg
             class="fill-current"
@@ -150,17 +150,17 @@
 
     <!-- Time Select Input -->
     <div>
-      <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+      <label class="mb-1.5 block text-sm font-medium text-gray-700">
         Time Select Input
       </label>
       <div class="relative">
         <flat-pickr
           v-model="time"
           :config="flatpickrTimeConfig"
-          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+          class=" h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
           placeholder="Select time"
         />
-        <span class="absolute text-gray-500 -translate-y-1/2 right-3 top-1/2 dark:text-gray-400">
+        <span class="absolute text-gray-500 -translate-y-1/2 right-3 top-1/2">
           <svg
             class="fill-current"
             width="20"
@@ -182,7 +182,7 @@
 
     <!-- Input with Payment -->
     <div>
-      <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+      <label class="mb-1.5 block text-sm font-medium text-gray-700">
         Input with Payment
       </label>
       <div class="relative">
@@ -190,10 +190,10 @@
           type="text"
           v-model="formData.cardNumber"
           placeholder="Card number"
-          class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+          class=" h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
         />
         <span
-          class="absolute left-0 top-1/2 flex h-11 w-[46px] -translate-y-1/2 items-center justify-center border-r border-gray-200 dark:border-gray-800"
+          class="absolute left-0 top-1/2 flex h-11 w-[46px] -translate-y-1/2 items-center justify-center border-r border-gray-200"
         >
           <svg
             width="20"

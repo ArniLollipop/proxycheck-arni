@@ -1,7 +1,7 @@
 <template>
   <aside
     :class="[
-      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
+      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
       {
         'lg:w-[290px]': isExpanded || isMobileOpen || isHovered,
         'lg:w-[90px]': !isExpanded && !isHovered,
@@ -11,43 +11,9 @@
       },
     ]"
     @mouseenter="!isExpanded && (isHovered = true)"
-    @mouseleave="isHovered = false"
-  >
+    @mouseleave="isHovered = false">
     <div
-      :class="[
-        'py-8 flex',
-        !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
-      ]"
-    >
-      <router-link to="/">
-        <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="dark:hidden"
-          src="/images/logo/logo.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="hidden dark:block"
-          src="/images/logo/logo-dark.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
-          v-else
-          src="/images/logo/logo-icon.svg"
-          alt="Logo"
-          width="32"
-          height="32"
-        />
-      </router-link>
-    </div>
-    <div
-      class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar"
-    >
+      class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar mt-8">
       <nav class="mb-6">
         <div class="flex flex-col gap-4">
           <div v-for="(menuGroup, groupIndex) in menuGroups" :key="groupIndex">
@@ -57,8 +23,7 @@
                 !isExpanded && !isHovered
                   ? 'lg:justify-center'
                   : 'justify-start',
-              ]"
-            >
+              ]">
               <template v-if="isExpanded || isHovered || isMobileOpen">
                 {{ menuGroup.title }}
               </template>
@@ -78,15 +43,13 @@
                     !isExpanded && !isHovered
                       ? 'lg:justify-center'
                       : 'lg:justify-start',
-                  ]"
-                >
+                  ]">
                   <span
                     :class="[
                       isSubmenuOpen(groupIndex, index)
                         ? 'menu-item-icon-active'
                         : 'menu-item-icon-inactive',
-                    ]"
-                  >
+                    ]">
                     <component :is="item.icon" />
                   </span>
                   <span
@@ -104,8 +67,7 @@
                           index
                         ),
                       },
-                    ]"
-                  />
+                    ]" />
                 </button>
                 <router-link
                   v-else-if="item.path"
@@ -116,15 +78,13 @@
                       'menu-item-active': isActive(item.path),
                       'menu-item-inactive': !isActive(item.path),
                     },
-                  ]"
-                >
+                  ]">
                   <span
                     :class="[
                       isActive(item.path)
                         ? 'menu-item-icon-active'
                         : 'menu-item-icon-inactive',
-                    ]"
-                  >
+                    ]">
                     <component :is="item.icon" />
                   </span>
                   <span
@@ -137,14 +97,12 @@
                   @enter="startTransition"
                   @after-enter="endTransition"
                   @before-leave="startTransition"
-                  @after-leave="endTransition"
-                >
+                  @after-leave="endTransition">
                   <div
                     v-show="
                       isSubmenuOpen(groupIndex, index) &&
                       (isExpanded || isHovered || isMobileOpen)
-                    "
-                  >
+                    ">
                     <ul class="mt-2 space-y-1 ml-9">
                       <li v-for="subItem in item.subItems" :key="subItem.name">
                         <router-link
@@ -159,8 +117,7 @@
                                 subItem.path
                               ),
                             },
-                          ]"
-                        >
+                          ]">
                           {{ subItem.name }}
                           <span class="flex items-center gap-1 ml-auto">
                             <span
@@ -175,8 +132,7 @@
                                     subItem.path
                                   ),
                                 },
-                              ]"
-                            >
+                              ]">
                               new
                             </span>
                             <span
@@ -191,8 +147,7 @@
                                     subItem.path
                                   ),
                                 },
-                              ]"
-                            >
+                              ]">
                               pro
                             </span>
                           </span>
@@ -206,7 +161,7 @@
           </div>
         </div>
       </nav>
-      <SidebarWidget v-if="isExpanded || isHovered || isMobileOpen" />
+      <!-- <SidebarWidget v-if="isExpanded || isHovered || isMobileOpen" /> -->
     </div>
   </aside>
 </template>
@@ -230,7 +185,7 @@ import {
   ListIcon,
   PlugInIcon,
 } from "../../icons";
-import SidebarWidget from "./SidebarWidget.vue";
+// import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
 

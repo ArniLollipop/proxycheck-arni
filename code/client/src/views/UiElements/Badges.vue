@@ -69,5 +69,5 @@ import ComponentCard from '../../components/common/ComponentCard.vue'
 import { PlusIcon } from '@/icons'
 const currentPageTitle = ref('Badge')
 
-const colors = ['primary', 'success', 'error', 'warning', 'info', 'light', 'dark'] as const
+const colors = ['primary', 'success', 'error', 'warning', 'info', 'light'] as const
 </script>

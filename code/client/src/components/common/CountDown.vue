@@ -1,7 +1,7 @@
 <template>
   <div class="mb-10">
     <div
-      class="flex flex-wrap justify-center gap-1 mb-2 font-bold text-title-md text-brand-500 dark:text-brand-400 xl:text-title-lg"
+      class="flex flex-wrap justify-center gap-1 mb-2 font-bold text-title-md text-brand-500 xl:text-title-lg"
     >
       <!-- timer days -->
       <div v-for="(day, index) in daysArray" :key="index">
@@ -38,7 +38,7 @@
       </div>
     </div>
 
-    <div class="text-base text-center text-gray-500 dark:text-gray-400">
+    <div class="text-base text-center text-gray-500">
       <div class="flex justify-center gap-0.5">
         <div v-for="(day, index) in daysArray" :key="index">
           <span v-show="day.visible" class="inline-block timer-box">

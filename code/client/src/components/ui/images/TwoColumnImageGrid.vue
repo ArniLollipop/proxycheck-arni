@@ -4,7 +4,7 @@
       <img
         src="/images/grid-image/image-02.png"
         alt="grid"
-        class="w-full border border-gray-200 rounded-xl dark:border-gray-800"
+        class="w-full border border-gray-200 rounded-xl"
       />
     </div>
 
@@ -12,7 +12,7 @@
       <img
         src="/images/grid-image/image-03.png"
         alt="grid"
-        class="w-full border border-gray-200 rounded-xl dark:border-gray-800"
+        class="w-full border border-gray-200 rounded-xl"
       />
     </div>
   </div>

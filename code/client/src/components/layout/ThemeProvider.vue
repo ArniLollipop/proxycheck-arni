@@ -10,28 +10,25 @@ type Theme = 'light' | 'dark'
 const theme = ref<Theme>('light')
 const isInitialized = ref(false)
 
-const isDarkMode = computed(() => theme.value === 'dark')
+const isDarkMode = computed(() => false) // Always false - dark mode disabled
 
 const toggleTheme = () => {
-  theme.value = theme.value === 'light' ? 'dark' : 'light'
+  // Theme toggle disabled - always use light mode
 }
 
 onMounted(() => {
-  const savedTheme = localStorage.getItem('theme') as Theme | null
-  const initialTheme = savedTheme || 'light' // Default to light theme
-
-  theme.value = initialTheme
+  // Force light theme
+  theme.value = 'light'
+  document.documentElement.classList.remove('dark')
+  localStorage.setItem('theme', 'light')
   isInitialized.value = true
 })
 
 watch([theme, isInitialized], ([newTheme, newIsInitialized]) => {
   if (newIsInitialized) {
-    localStorage.setItem('theme', newTheme)
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
+    // Always force light theme
+    localStorage.setItem('theme', 'light')
+    document.documentElement.classList.remove('dark')
   }
 })
 

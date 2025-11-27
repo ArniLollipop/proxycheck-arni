@@ -8,13 +8,13 @@
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div>
               <label
-                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                class="mb-2 block text-sm font-medium text-black"
                 >Proxy</label
               >
               <select
                 v-model="filters.proxyId"
                 @change="fetchLogs"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4">
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none">
                 <option value="">All Proxies</option>
                 <option
                   v-for="proxy in proxies"
@@ -26,13 +26,13 @@
             </div>
             <div>
               <label
-                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                class="mb-2 block text-sm font-medium text-black"
                 >Error Type</label
               >
               <select
                 v-model="filters.errorType"
                 @change="fetchLogs"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4">
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none">
                 <option value="">All Types</option>
                 <option value="ping_failed">Ping Failed</option>
                 <option value="speed_check_failed">Speed Check Failed</option>
@@ -41,35 +41,35 @@
             </div>
             <div>
               <label
-                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                class="mb-2 block text-sm font-medium text-black"
                 >Start Date</label
               >
               <input
                 v-model="filters.startDate"
                 @change="fetchLogs"
                 type="date"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none" />
             </div>
             <div>
               <label
-                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                class="mb-2 block text-sm font-medium text-black"
                 >End Date</label
               >
               <input
                 v-model="filters.endDate"
                 @change="fetchLogs"
                 type="date"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4" />
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none" />
             </div>
             <div>
               <label
-                class="mb-2 block text-sm font-medium text-black dark:text-white"
+                class="mb-2 block text-sm font-medium text-black"
                 >Page Size</label
               >
               <select
                 v-model.number="filters.pageSize"
                 @change="fetchLogs"
-                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4">
+                class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none">
                 <option :value="25">25</option>
                 <option :value="50">50</option>
                 <option :value="100">100</option>
@@ -80,10 +80,10 @@
           <!-- Statistics -->
           <div
             v-if="filters.proxyId && stats"
-            class="grid grid-cols-2 gap-4 rounded-lg border border-stroke p-4 sm:grid-cols-5 dark:border-strokedark">
+            class="grid grid-cols-2 gap-4 rounded-lg border border-stroke p-4 sm:grid-cols-5">
             <div class="text-center">
               <p class="text-sm text-bodydark">Total Failures</p>
-              <p class="text-2xl font-bold text-black dark:text-white">
+              <p class="text-2xl font-bold text-black">
                 {{ stats.total_failures }}
               </p>
             </div>
@@ -107,7 +107,7 @@
             </div>
             <div class="text-center">
               <p class="text-sm text-bodydark">Failure Rate</p>
-              <p class="text-2xl font-bold text-black dark:text-white">
+              <p class="text-2xl font-bold text-black">
                 {{ stats.failure_rate.toFixed(1) }}/day
               </p>
             </div>
@@ -117,20 +117,20 @@
           <div class="overflow-x-auto">
             <table class="w-full table-auto">
               <thead>
-                <tr class="bg-gray-2 text-left dark:bg-meta-4">
-                  <th class="px-4 py-3 font-medium text-black dark:text-white">
+                <tr class="bg-gray-2 text-left">
+                  <th class="px-4 py-3 font-medium text-black">
                     Timestamp
                   </th>
-                  <th class="px-4 py-3 font-medium text-black dark:text-white">
+                  <th class="px-4 py-3 font-medium text-black">
                     Proxy
                   </th>
-                  <th class="px-4 py-3 font-medium text-black dark:text-white">
+                  <th class="px-4 py-3 font-medium text-black">
                     Error Type
                   </th>
-                  <th class="px-4 py-3 font-medium text-black dark:text-white">
+                  <th class="px-4 py-3 font-medium text-black">
                     Error Message
                   </th>
-                  <th class="px-4 py-3 font-medium text-black dark:text-white">
+                  <th class="px-4 py-3 font-medium text-black">
                     Latency
                   </th>
                 </tr>
@@ -139,8 +139,8 @@
                 <tr
                   v-for="log in logs"
                   :key="log.id"
-                  class="border-b border-stroke dark:border-strokedark">
-                  <td class="px-4 py-3 text-black dark:text-white">
+                  class="border-b border-stroke">
+                  <td class="px-4 py-3 text-black">
                     {{ formatDate(log.timestamp) }}
                   </td>
                   <td class="px-4 py-3">
@@ -164,12 +164,12 @@
                       {{ formatErrorType(log.error_type) }}
                     </span>
                   </td>
-                  <td class="px-4 py-3 text-black dark:text-white">
+                  <td class="px-4 py-3 text-black">
                     <span class="max-w-md truncate" :title="log.error_msg">
                       {{ log.error_msg }}
                     </span>
                   </td>
-                  <td class="px-4 py-3 text-black dark:text-white">
+                  <td class="px-4 py-3 text-black">
                     {{ log.latency }}ms
                   </td>
                 </tr>
@@ -198,7 +198,7 @@
               <button
                 @click="changePage(currentPage - 1)"
                 :disabled="currentPage === 1"
-                class="rounded-md border border-stroke px-3 py-1 hover:bg-gray disabled:opacity-50 dark:border-strokedark">
+                class="rounded-md border border-stroke px-3 py-1 hover:bg-gray disabled:opacity-50">
                 Previous
               </button>
               <button
@@ -207,7 +207,7 @@
                 @click="changePage(page)"
                 :class="{
                   'bg-primary text-white': page === currentPage,
-                  'border-stroke hover:bg-gray dark:border-strokedark':
+                  'border-stroke hover:bg-gray':
                     page !== currentPage,
                 }"
                 class="rounded-md border px-3 py-1">
@@ -216,7 +216,7 @@
               <button
                 @click="changePage(currentPage + 1)"
                 :disabled="currentPage === totalPages"
-                class="rounded-md border border-stroke px-3 py-1 hover:bg-gray disabled:opacity-50 dark:border-strokedark">
+                class="rounded-md border border-stroke px-3 py-1 hover:bg-gray disabled:opacity-50">
                 Next
               </button>
             </div>
