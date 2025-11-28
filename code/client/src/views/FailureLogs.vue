@@ -1,14 +1,12 @@
 <template>
   <AdminLayout>
-    <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="space-y-5 sm:space-y-6">
       <ComponentCard title="Failure History">
         <div class="space-y-4">
           <!-- Filters -->
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div>
-              <label
-                class="mb-2 block text-sm font-medium text-black"
+              <label class="mb-2 block text-sm font-medium text-black"
                 >Proxy</label
               >
               <select
@@ -25,8 +23,7 @@
               </select>
             </div>
             <div>
-              <label
-                class="mb-2 block text-sm font-medium text-black"
+              <label class="mb-2 block text-sm font-medium text-black"
                 >Error Type</label
               >
               <select
@@ -40,8 +37,7 @@
               </select>
             </div>
             <div>
-              <label
-                class="mb-2 block text-sm font-medium text-black"
+              <label class="mb-2 block text-sm font-medium text-black"
                 >Start Date</label
               >
               <input
@@ -51,8 +47,7 @@
                 class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none" />
             </div>
             <div>
-              <label
-                class="mb-2 block text-sm font-medium text-black"
+              <label class="mb-2 block text-sm font-medium text-black"
                 >End Date</label
               >
               <input
@@ -62,8 +57,7 @@
                 class="w-full rounded-md border border-stroke px-4 py-2 focus:border-primary focus:outline-none" />
             </div>
             <div>
-              <label
-                class="mb-2 block text-sm font-medium text-black"
+              <label class="mb-2 block text-sm font-medium text-black"
                 >Page Size</label
               >
               <select
@@ -115,22 +109,22 @@
 
           <!-- Logs table -->
           <div class="overflow-x-auto">
-            <table class="w-full table-auto">
+            <table class="w-full table-auto text-sm">
               <thead>
                 <tr class="bg-gray-2 text-left">
-                  <th class="px-4 py-3 font-medium text-black">
+                  <th class="px-2 py-2 font-medium text-black text-nowrap">
                     Timestamp
                   </th>
-                  <th class="px-4 py-3 font-medium text-black">
+                  <th class="px-2 py-2 font-medium text-black text-nowrap">
                     Proxy
                   </th>
-                  <th class="px-4 py-3 font-medium text-black">
+                  <th class="px-2 py-2 font-medium text-black text-nowrap">
                     Error Type
                   </th>
-                  <th class="px-4 py-3 font-medium text-black">
+                  <th class="px-2 py-2 font-medium text-black text-nowrap">
                     Error Message
                   </th>
-                  <th class="px-4 py-3 font-medium text-black">
+                  <th class="px-2 py-2 font-medium text-black text-nowrap">
                     Latency
                   </th>
                 </tr>
@@ -139,18 +133,18 @@
                 <tr
                   v-for="log in logs"
                   :key="log.id"
-                  class="border-b border-stroke">
-                  <td class="px-4 py-3 text-black">
+                  class="border-b border-stroke hover:bg-gray-2">
+                  <td class="px-2 py-2 text-black text-xs">
                     {{ formatDate(log.timestamp) }}
                   </td>
-                  <td class="px-4 py-3">
+                  <td class="px-2 py-2">
                     <span
                       @click="filterByProxy(log.proxy_id)"
-                      class="cursor-pointer text-primary hover:underline">
+                      class="cursor-pointer text-primary hover:underline text-xs">
                       {{ getProxyName(log.proxy_id) }}
                     </span>
                   </td>
-                  <td class="px-4 py-3">
+                  <td class="px-2 py-2">
                     <span
                       :class="{
                         'bg-danger text-white':
@@ -160,21 +154,21 @@
                         'bg-secondary text-white':
                           log.error_type === 'ip_check_failed',
                       }"
-                      class="inline-flex rounded-full px-3 py-1 text-xs font-medium">
+                      class="inline-flex rounded-full px-2 py-1 text-xs font-medium">
                       {{ formatErrorType(log.error_type) }}
                     </span>
                   </td>
-                  <td class="px-4 py-3 text-black">
-                    <span class="max-w-md truncate" :title="log.error_msg">
+                  <td class="px-2 py-2 text-black text-xs">
+                    <span class="max-w-md truncate block" :title="log.error_msg">
                       {{ log.error_msg }}
                     </span>
                   </td>
-                  <td class="px-4 py-3 text-black">
+                  <td class="px-2 py-2 text-black font-mono text-xs">
                     {{ log.latency }}ms
                   </td>
                 </tr>
                 <tr v-if="logs.length === 0">
-                  <td colspan="5" class="px-4 py-8 text-center text-bodydark">
+                  <td colspan="5" class="px-2 py-6 text-center text-bodydark">
                     No failure logs found.
                     {{
                       filters.proxyId || filters.errorType || filters.startDate
@@ -207,8 +201,7 @@
                 @click="changePage(page)"
                 :class="{
                   'bg-primary text-white': page === currentPage,
-                  'border-stroke hover:bg-gray':
-                    page !== currentPage,
+                  'border-stroke hover:bg-gray': page !== currentPage,
                 }"
                 class="rounded-md border px-3 py-1">
                 {{ page }}
@@ -229,12 +222,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import axios from "axios";
 
-const currentPageTitle = ref("Failure Logs");
 const logs = ref([]);
 const proxies = ref([]);
 const stats = ref(null);

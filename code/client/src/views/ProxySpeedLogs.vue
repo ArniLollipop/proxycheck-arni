@@ -1,6 +1,5 @@
 <template>
   <AdminLayout>
-    <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="space-y-5 sm:space-y-6">
       <ComponentCard title="Speed Test History">
         <div class="space-y-4">
@@ -65,6 +64,7 @@
                 <tr class="bg-gray-2 text-left">
                   <th class="px-4 py-3 font-medium text-black">Timestamp</th>
                   <th class="px-4 py-3 font-medium text-black">Proxy</th>
+                  <th class="px-4 py-3 font-medium text-black">Ping</th>
                   <th class="px-4 py-3 font-medium text-black">
                     Download Speed
                   </th>
@@ -84,6 +84,13 @@
                       @click="filterByProxy(log.proxy_id)"
                       class="cursor-pointer text-primary hover:underline">
                       {{ getProxyName(log.proxy_id) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span
+                      :class="getPingClass(log.ping)"
+                      class="font-mono font-medium">
+                      {{ log.ping ? log.ping.toFixed(0) : "-" }} ms
                     </span>
                   </td>
                   <td class="px-4 py-3">
@@ -108,7 +115,7 @@
                   </td>
                 </tr>
                 <tr v-if="logs.length === 0">
-                  <td colspan="5" class="px-4 py-8 text-center text-bodydark">
+                  <td colspan="6" class="px-4 py-8 text-center text-bodydark">
                     No speed test logs found.
                     {{
                       filters.proxyId || filters.startDate
@@ -162,12 +169,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import axios from "axios";
 
-const currentPageTitle = ref("Speed Test Logs");
 const logs = ref([]);
 const proxies = ref([]);
 const stats = ref(null);
@@ -189,7 +194,7 @@ const visiblePages = computed(() => {
   const pages = [];
   const maxVisible = 5;
   let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
-  let end = Math.min(totalPages.value, start + maxVisible - 1);
+  const end = Math.min(totalPages.value, start + maxVisible - 1);
 
   if (end - start < maxVisible - 1) {
     start = Math.max(1, end - maxVisible + 1);
@@ -211,6 +216,14 @@ const getSpeedClass = (kbps) => {
   if (mbps >= 50) return "text-success";
   if (mbps >= 25) return "text-primary";
   if (mbps >= 10) return "text-warning";
+  return "text-danger";
+};
+
+const getPingClass = (ping) => {
+  if (!ping) return "text-bodydark";
+  if (ping < 50) return "text-success";
+  if (ping < 100) return "text-primary";
+  if (ping < 200) return "text-warning";
   return "text-danger";
 };
 

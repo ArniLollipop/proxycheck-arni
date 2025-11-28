@@ -25,19 +25,45 @@ func CheckSpeed(settings *Settings, proxy *Proxy, db *gorm.DB) (float64, float64
 		return 0, 0, errors.New("no suitable servers found")
 	}
 	tg := targets[0]
+
+	// Run ping test with callback
+	err = tg.PingTest(func(latency time.Duration) {})
+	if err != nil {
+		return 0, 0, err
+	}
+
 	tg.DownloadTest()
 	tg.UploadTest()
+
+	ping := float64(tg.Latency.Milliseconds())
 	upload := tg.ULSpeed.Mbps()
 	download := tg.DLSpeed.Mbps()
 
-	// Store speed in Mbps (not Kbps)
+	// Retry once if download or upload is 0
+	if download == 0 || upload == 0 {
+		log.Printf("Speedtest retry for %s:%s - Download: %.2f Mbps, Upload: %.2f Mbps (retrying once)",
+			proxy.Ip, proxy.Port, download, upload)
+
+		tg.DownloadTest()
+		tg.UploadTest()
+
+		upload = tg.ULSpeed.Mbps()
+		download = tg.DLSpeed.Mbps()
+	}
+
+	log.Printf("Speedtest results for %s:%s - Ping: %.2fms, Download: %.2f Mbps, Upload: %.2f Mbps",
+		proxy.Ip, proxy.Port, ping, download, upload)
+
+	// Store speed in Mbps (not Kbps) and ping in ms
 	proxy.Speed = int(download)
 	proxy.Upload = int(upload)
+	proxy.LastLatency = int(ping)
 
 	hist := ProxySpeedLog{
 		Id:        uuid.NewString(),
 		ProxyId:   proxy.Id,
 		Timestamp: time.Now(),
+		Ping:			 ping,
 		Speed:     int(download),
 		Upload:    int(upload),
 	}
@@ -58,17 +84,21 @@ func Ping(settings *Settings, proxy *Proxy) (int, error) {
 		return 0, err
 	}
 
-	startTime := time.Now()
-	r, err := client.Get(settings.Url)
+	var speedtestClient = speedtest.New(speedtest.WithDoer(client))
+	serverList, _ := speedtestClient.FetchServers()
+	targets, _ := serverList.FindServer([]int{})
+	if len(targets) == 0 {
+		return 0, errors.New("no suitable servers found")
+	}
+	tg := targets[0]
+
+	// Run ping test with callback
+	err = tg.PingTest(func(latency time.Duration) {})
 	if err != nil {
 		return 0, err
 	}
-	defer r.Body.Close()
 
-	if r.StatusCode == 403 || r.StatusCode == 407 {
-		return 0, errors.New("status code 403|407")
-	}
-	diff := time.Since(startTime) / time.Millisecond
+	ping := int(tg.Latency.Milliseconds())
 
-	return int(diff), nil
+	return ping, nil
 }

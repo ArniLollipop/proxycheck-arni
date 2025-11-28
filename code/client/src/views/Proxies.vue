@@ -1,6 +1,5 @@
 <template>
   <AdminLayout>
-    <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="space-y-5 sm:space-y-6">
       <ComponentCard title="Proxy Management">
         <div class="space-y-4">
@@ -11,20 +10,17 @@
                 @click="showAddModal = true"
                 class="inline-flex items-center justify-center rounded-md border border-stroke px-4 py-2 text-center font-medium hover:bg-gray">
                 <Plus class="w-4 h-4 mr-2" />
-                Add Proxy
               </button>
               <button
                 @click="showImportModal = true"
                 class="inline-flex items-center justify-center rounded-md border border-stroke px-4 py-2 text-center font-medium hover:bg-gray">
                 <Upload class="w-4 h-4 mr-2" />
-                Import
               </button>
               <button
                 @click="exportSelected"
                 :disabled="selectedProxies.length === 0"
                 class="inline-flex items-center justify-center rounded-md border border-stroke px-4 py-2 text-center font-medium hover:bg-gray">
                 <Download class="w-4 h-4 mr-2" />
-                Export Selected
               </button>
               <button
                 @click="verifySelected"
@@ -33,7 +29,7 @@
                 <RefreshCw
                   class="w-4 h-4 mr-2"
                   :class="{ 'animate-spin': isVerifying }" />
-                Verify Selected
+                Verify
               </button>
               <button
                 @click="showColumnSettings = true"
@@ -68,100 +64,102 @@
                   </th>
                   <th
                     v-if="visibleColumns.status"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Status
                   </th>
                   <th
                     v-if="visibleColumns.client"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Client
                   </th>
                   <th
                     v-if="visibleColumns.modemId"
-                    class="px-2 py-2 font-medium text-black">
-                    Modem ID
+                    class="px-2 py-2 font-medium text-black text-nowrap">
+                    text-nowrap Modem ID
                   </th>
                   <th
                     v-if="visibleColumns.pcId"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     PC ID
                   </th>
                   <th
                     v-if="visibleColumns.serverIp"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Server IP
                   </th>
                   <th
                     v-if="visibleColumns.port"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Port
                   </th>
                   <th
                     v-if="visibleColumns.realIp"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Real IP
                   </th>
                   <th
                     v-if="visibleColumns.country"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Country
                   </th>
                   <th
                     v-if="visibleColumns.operator"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Operator
                   </th>
                   <th
                     v-if="visibleColumns.phone"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Phone
                   </th>
                   <th
                     v-if="visibleColumns.username"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Username
                   </th>
                   <th
                     v-if="visibleColumns.password"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Password
                   </th>
                   <th
                     v-if="visibleColumns.uptime"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Uptime
                   </th>
                   <th
                     v-if="visibleColumns.latency"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Latency
                   </th>
                   <th
                     v-if="visibleColumns.download"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Speed ↓
                   </th>
                   <th
                     v-if="visibleColumns.upload"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Speed ↑
                   </th>
                   <th
                     v-if="visibleColumns.traffic24h"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Traffic 24h
                   </th>
                   <th
                     v-if="visibleColumns.trafficLeft"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Traffic Left
                   </th>
                   <th
                     v-if="visibleColumns.logs"
-                    class="px-2 py-2 font-medium text-black">
+                    class="px-2 py-2 font-medium text-black text-nowrap">
                     Logs
                   </th>
-                  <th class="px-2 py-2 font-medium text-black">Actions</th>
+                  <th class="px-2 py-2 font-medium text-black text-nowrap">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -215,9 +213,9 @@
                       >
                       <span
                         v-if="verifyingProxies.has(proxy.id)"
-                        class="text-xs text-primary font-medium"
-                        >Verifying...</span
-                      >
+                        class="text-xs text-primary font-medium">
+                        Verifying...
+                      </span>
                     </div>
                   </td>
 
@@ -244,7 +242,11 @@
                   <td
                     v-if="visibleColumns.serverIp"
                     class="px-2 py-2 text-black font-mono text-xs">
-                    {{ proxy.ip }}
+                    <span
+                      @click="viewIpLogs(proxy.id)"
+                      class="hover:underline transition-all duration-150">
+                      {{ proxy.ip }}
+                    </span>
                   </td>
 
                   <!-- Port -->
@@ -265,17 +267,14 @@
                             ? 'text-danger font-semibold'
                             : 'text-black'
                         ">
+                        {{ proxy.stack && "⚠️" }}
+
                         {{ proxy.realIP || "-" }}
                       </span>
                       <span
                         v-if="proxy.lastCheck"
                         class="text-xs text-bodydark">
                         ({{ getMinutesSince(proxy.lastCheck) }}m ago)
-                      </span>
-                      <span
-                        v-if="proxy.stack"
-                        class="text-xs text-danger font-medium">
-                        ⚠️ IP Stuck
                       </span>
                     </div>
                   </td>
@@ -361,14 +360,22 @@
                   <td
                     v-if="visibleColumns.download"
                     class="px-2 py-2 text-black text-xs">
-                    {{ proxy.speed || 0 }} Mbps
+                    <span
+                      @click="viewSpeedLogs(proxy.id)"
+                      class="hover:underline transition-all duration-150">
+                      {{ proxy.speed || 0 }} Mbps
+                    </span>
                   </td>
 
                   <!-- Upload Speed -->
                   <td
                     v-if="visibleColumns.upload"
                     class="px-2 py-2 text-black text-xs">
-                    {{ proxy.upload || 0 }} Mbps
+                    <span
+                      @click="viewSpeedLogs(proxy.id)"
+                      class="hover:underline transition-all duration-150">
+                      {{ proxy.upload || 0 }} Mbps
+                    </span>
                   </td>
 
                   <!-- Traffic 24h (placeholder) -->
@@ -387,18 +394,11 @@
 
                   <!-- Logs Analysis (placeholder top-5) -->
                   <td v-if="visibleColumns.logs" class="px-2 py-2">
-                    <div class="flex flex-col gap-1">
-                      <button
-                        @click="viewLogs(proxy.id)"
-                        class="text-primary hover:underline text-xs">
-                        IP Logs
-                      </button>
-                      <button
-                        @click="viewSpeedLogs(proxy.id)"
-                        class="text-success hover:underline text-xs">
-                        Speed Logs
-                      </button>
-                    </div>
+                    <button
+                      @click="viewLogs(proxy.id)"
+                      class="text-primary hover:underline text-xs">
+                      View Logs
+                    </button>
                   </td>
 
                   <!-- Actions -->
@@ -639,12 +639,10 @@ import {
   Eye,
   EyeOff,
 } from "lucide-vue-next";
-import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import axios from "axios";
 
-const currentPageTitle = ref("Proxies");
 const proxies = ref([]);
 const selectedProxies = ref([]);
 const searchQuery = ref("");
@@ -886,7 +884,7 @@ const verifySelected = async () => {
   verifyingProxies.value = new Set(selectedProxies.value);
   const ids = selectedProxies.value.join(",");
 
-  const eventSource = new EventSource(`/api/verify-batch?ids=${ids}`);
+  const eventSource = new EventSource(`/api/proxy/verify-batch?ids=${ids}`);
 
   eventSource.addEventListener("start", (event) => {
     const data = JSON.parse(event.data);
@@ -947,6 +945,10 @@ const importProxies = async () => {
 };
 
 const viewLogs = (proxyId) => {
+  window.location.href = `/failure-logs?proxy_id=${proxyId}`;
+};
+
+const viewIpLogs = (proxyId) => {
   window.location.href = `/ip-logs?proxy_id=${proxyId}`;
 };
 

@@ -1,6 +1,5 @@
 <template>
   <AdminLayout>
-    <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="space-y-5 sm:space-y-6">
       <ComponentCard title="IP Change History">
         <div class="space-y-4">
@@ -185,12 +184,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import ComponentCard from "@/components/common/ComponentCard.vue";
 import axios from "axios";
 
-const currentPageTitle = ref("IP Change Logs");
 const logs = ref([]);
 const proxies = ref([]);
 const total = ref(0);

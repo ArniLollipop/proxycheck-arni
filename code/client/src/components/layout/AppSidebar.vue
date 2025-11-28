@@ -12,8 +12,9 @@
     ]"
     @mouseenter="!isExpanded && (isHovered = true)"
     @mouseleave="isHovered = false">
+    <!-- Collapse Button -->
     <div
-      class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar mt-8">
+      class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar mt-2">
       <nav class="mb-6">
         <div class="flex flex-col gap-4">
           <div v-for="(menuGroup, groupIndex) in menuGroups" :key="groupIndex">
@@ -191,7 +192,8 @@ import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
 
-const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
+const { isExpanded, isMobileOpen, isHovered, openSubmenu, toggleSidebar } =
+  useSidebar();
 
 const menuGroups = [
   {

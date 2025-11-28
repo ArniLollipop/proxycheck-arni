@@ -321,6 +321,7 @@ type ProxySpeedLog struct {
 	Id        string    `json:"id"`
 	ProxyId   string    `json:"proxy_id"`
 	Timestamp time.Time `json:"timestamp"`
+	Ping 			float64 	 `json:"ping"` 
 	Speed     int       `json:"speed"`
 	Upload    int       `json:"upload"`
 }
